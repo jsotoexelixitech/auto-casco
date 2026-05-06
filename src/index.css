@@ -1,0 +1,252 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,700;1,400;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300..700,0..1,0&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  /* Avoid iOS auto-zoom on form inputs */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  background-color: #f7f8fc;
+  color: #0c1226;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern', 'liga', 'cv05';
+  /* Prevent rubber-band scroll showing white on iOS */
+  overscroll-behavior-y: none;
+}
+
+::selection {
+  background-color: #0F1A5A;
+  color: #ffffff;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Avoid iOS zoom on focused inputs ≥ 16px */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+@media (min-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c8ccdb;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7a7f95;
+}
+
+/* Material symbols font */
+.msym {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  flex-shrink: 0;
+}
+.msym.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Brand wordmark — Constantia substitute */
+.wordmark {
+  font-family: 'Playfair Display', Constantia, Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: #0F1A5A;
+}
+.wordmark .small-caps {
+  font-variant-caps: small-caps;
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* Hide scrollbar utility for horizontal pill scrollers */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@layer components {
+  .card {
+    @apply bg-surface-container-lowest rounded-xl shadow-elev-1 border border-outline-variant/40;
+  }
+  .card-elev2 {
+    @apply bg-surface-container-lowest rounded-xl shadow-elev-2 border border-outline-variant/40;
+  }
+  .card-glass {
+    @apply rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-elev-1;
+  }
+
+  /* Buttons — touch-target friendly (≥44px) */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-sans text-label-md px-md py-2.5 rounded-lg transition-all duration-200 select-none whitespace-nowrap min-h-[44px] active:scale-[0.98];
+  }
+  .btn-primary {
+    @apply btn text-on-primary shadow-elev-primary hover:shadow-elev-2 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-elev-primary;
+    background-image: linear-gradient(135deg, #162A7F 0%, #0F1A5A 100%);
+  }
+  .btn-accent {
+    @apply btn text-white shadow-elev-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed;
+    background-image: linear-gradient(135deg, #FF6675 0%, #E84F51 50%, #B23F44 100%);
+  }
+  .btn-ghost {
+    @apply btn border-2 border-primary text-primary bg-transparent hover:bg-primary/5 active:bg-primary/10;
+  }
+  .btn-soft {
+    @apply btn bg-surface-container text-on-surface hover:bg-surface-container-high;
+  }
+  .btn-icon {
+    @apply inline-flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 hover:bg-surface-container active:scale-95 text-on-surface-variant;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-semibold;
+  }
+
+  .input {
+    @apply w-full px-3 py-2.5 rounded-lg bg-white border border-outline-variant/70 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-on-surface placeholder:text-on-surface-variant/60 text-body-md min-h-[44px];
+  }
+
+  .label {
+    @apply block text-label-md text-on-surface mb-1;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, #eceef0 0%, #f7f8fc 50%, #eceef0 100%);
+    background-size: 200% 100%;
+    @apply animate-shimmer rounded-lg;
+  }
+
+  /* Section utility — fluid horizontal padding */
+  .container-pad {
+    @apply px-3 sm:px-5 md:px-6 lg:px-8;
+  }
+
+  /* Visually hidden — for accessible labels */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+/* Route transition */
+.route-enter {
+  animation: fade-in 0.35s ease-out both;
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Brand "M" logo as inline SVG fallback (used when png is unavailable) */
+.brand-m-gradient {
+  background-image: linear-gradient(135deg, #6371c2 0%, #162A7F 50%, #0F1A5A 100%);
+}
+
+/* ── Wordmark font ─────────────────────────────────────────────────────── */
+.font-wordmark {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+}
+
+/* ── Splash / Welcome animations ───────────────────────────────────────── */
+@keyframes splashFadeOut {
+  to { opacity: 0; visibility: hidden; }
+}
+@keyframes splashLogoIn {
+  0%   { opacity: 0; transform: scale(0.78) translateY(8px); filter: blur(6px); }
+  55%  { opacity: 1; transform: scale(1.04) translateY(-2px); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1)    translateY(0);    filter: blur(0); }
+}
+@keyframes splashHaloPulse {
+  0%, 100% { transform: scale(1);    opacity: 0.55; }
+  50%      { transform: scale(1.15); opacity: 0.85; }
+}
+@keyframes splashTextIn {
+  0%   { opacity: 0; transform: translateY(10px); letter-spacing: 0.02em; }
+  100% { opacity: 1; transform: translateY(0);    letter-spacing: 0; }
+}
+@keyframes splashShine {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%)  skewX(-20deg); }
+}
+@keyframes splashLineGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+/* Toast stack — sits above mobile bottom nav, then bottom-right on tablet+ */
+.toast-stack {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
+}
+@media (min-width: 768px) {
+  .toast-stack {
+    bottom: 1.5rem;
+  }
+}

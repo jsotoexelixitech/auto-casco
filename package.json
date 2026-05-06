@@ -1,0 +1,40 @@
+{
+  "name": "auto-casa-inspeccion",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "start": "serve dist --single --listen 3000",
+    "deploy": "npm run build && pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs",
+    "tunnel": "cloudflared tunnel --url http://localhost:5173",
+    "dev:cloud": "concurrently -n \"vite,cloudflare\" -c \"blue,magenta\" \"npm run dev\" \"npm run tunnel\"",
+    "prod:cloud": "cloudflared tunnel --url http://localhost:3000"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.14.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.5.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^3.4.13",
+    "vite": "^8.0.10",
+    "wrangler": "^4.87.0"
+  }
+}

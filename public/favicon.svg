@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#162A7F"/>
+      <stop offset="100%" stop-color="#0F1A5A"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="48" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#4A8DD5"/>
+      <stop offset="100%" stop-color="#E84F51"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo redondeado -->
+  <rect width="48" height="48" rx="12" fill="url(#bg)"/>
+
+  <!-- Letra M centrada -->
+  <text
+    x="24" y="33"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-weight="700"
+    font-size="26"
+    fill="#FFFFFF"
+    letter-spacing="-1"
+  >M</text>
+
+  <!-- Línea acento inferior -->
+  <rect x="10" y="39" width="28" height="3" rx="1.5" fill="url(#accent)"/>
+</svg>
