@@ -21,14 +21,14 @@ export default function BottomNav() {
       className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-outline-variant/60 shadow-elev-2"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="grid grid-cols-5 px-2 py-1.5 max-w-md mx-auto">
+      <div className="grid grid-cols-5 px-2 py-1 max-w-md mx-auto">
         {visible.map((item) => {
           if (item.central) {
             return (
               <button
                 key={item.to}
                 onClick={() => navigate('/inspecciones/nueva')}
-                className="relative flex flex-col items-center justify-center gap-0.5 py-1 group"
+                className="relative flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-1 group"
               >
                 <span className="-mt-7 w-14 h-14 rounded-full bg-gradient-accent shadow-elev-accent flex items-center justify-center text-white border-4 border-white transition-transform group-active:scale-95">
                   <Icon name="add_a_photo" className="text-[26px]" filled />
@@ -45,7 +45,7 @@ export default function BottomNav() {
               to={item.to}
               className={({ isActive }) =>
                 clsx(
-                  'flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg transition relative',
+                  'flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 rounded-lg transition relative',
                   isActive
                     ? 'text-primary'
                     : 'text-on-surface-variant active:bg-surface-container',

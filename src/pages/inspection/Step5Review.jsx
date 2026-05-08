@@ -109,7 +109,7 @@ export default function Step5Review({ state, inspectionNumber }) {
           <h3 className="text-headline-md text-on-surface mb-3">
             Secuencias fotográficas
           </h3>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-2">
             {PHOTO_SEQUENCES.map((s) => {
               const ph = photos[s.id]
               return (

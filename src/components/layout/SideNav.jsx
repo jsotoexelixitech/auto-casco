@@ -75,7 +75,7 @@ export default function SideNav({ open, onClose }) {
               end={item.to === '/dashboard'}
               className={({ isActive }) =>
                 clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 font-sans text-label-md group relative',
+                  'flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg transition-all duration-200 font-sans text-label-md group relative',
                   isActive
                     ? 'bg-gradient-brand-soft text-on-primary shadow-elev-primary'
                     : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary',
@@ -105,7 +105,7 @@ export default function SideNav({ open, onClose }) {
               key={item.to}
               to={item.to}
               onClick={onClose}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition"
+              className="flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition"
             >
               <Icon name={item.icon} className="text-[22px]" />
               <span>{item.label}</span>
@@ -116,7 +116,7 @@ export default function SideNav({ open, onClose }) {
               logout()
               navigate('/login')
             }}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition"
+            className="flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition"
           >
             <Icon name="logout" className="text-[22px]" />
             <span>Cerrar sesión</span>

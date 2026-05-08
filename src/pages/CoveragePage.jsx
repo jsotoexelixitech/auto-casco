@@ -268,20 +268,20 @@ export default function CoveragePage() {
       {/* ── Sticky checkout bar ───────────────────────────────────────────── */}
       {/* Mobile: sits above BottomNav (72px+safe-area). md+: at true bottom, left offset for sidebar */}
       <div className="fixed inset-x-0 z-40 md:left-64 checkout-sticky">
-        {/* Confirmation layer (appears on first click to confirm) */}
+        {/* Confirmation layer */}
         {confirmed && (
-          <div className="bg-success text-on-success px-4 py-2 flex items-center justify-between gap-2 text-label-md">
-            <div className="flex items-center gap-2">
-              <Icon name="info" filled />
-              <span>
-                Confirma para activar <strong>{days} {days === 1 ? 'día' : 'días'}</strong> de{' '}
-                <strong>{plan?.nombre}</strong> en {vehicle?.marca} {vehicle?.modelo} por{' '}
-                <strong>${total}</strong>
+          <div className="bg-success text-on-success px-4 py-2 flex items-center justify-between gap-3 text-label-md">
+            <div className="flex items-start gap-2 min-w-0">
+              <Icon name="info" filled className="text-[18px] shrink-0 mt-0.5" />
+              <span className="text-caption sm:text-label-md break-words min-w-0">
+                Confirma: <strong>{days} {days === 1 ? 'día' : 'días'}</strong> ·{' '}
+                <strong>{plan?.nombre}</strong> · {vehicle?.marca} {vehicle?.modelo} · <strong>${total}</strong>
               </span>
             </div>
             <button
               onClick={() => setConfirmed(false)}
-              className="btn-icon w-8 h-8 text-on-success hover:bg-white/20"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/20 shrink-0"
+              aria-label="Cancelar"
             >
               <Icon name="close" />
             </button>

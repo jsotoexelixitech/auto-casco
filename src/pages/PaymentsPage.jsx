@@ -166,7 +166,7 @@ export default function PaymentsPage() {
                   <button
                     key={a}
                     onClick={() => setTopupAmount(a)}
-                    className={`py-2 rounded-lg text-label-md font-bold transition active:scale-95 ${
+                    className={`min-h-[44px] rounded-lg text-label-md font-bold transition active:scale-95 ${
                       topupAmount === a
                         ? 'bg-gradient-accent text-white'
                         : 'bg-white/10 hover:bg-white/20 text-white'
@@ -353,7 +353,7 @@ export default function PaymentsPage() {
               key={t.v}
               onClick={() => setMethodDraft({ ...methodDraft, type: t.v })}
               className={clsx(
-                'p-3 rounded-xl border-2 transition flex flex-col items-center gap-1 active:scale-95',
+                'p-3 min-h-[64px] rounded-xl border-2 transition flex flex-col items-center gap-1 active:scale-95',
                 methodDraft.type === t.v
                   ? 'border-primary bg-primary-fixed/40 ring-2 ring-primary/20 text-primary'
                   : 'border-outline-variant text-on-surface-variant hover:border-primary/40',
@@ -398,7 +398,7 @@ function Method({ m, onSetPrimary, onRemove }) {
         {!m.primary && (
           <button
             onClick={onSetPrimary}
-            className="btn-icon w-9 h-9"
+            className="btn-icon"
             aria-label="Marcar como principal"
             title="Marcar como principal"
           >
@@ -407,7 +407,7 @@ function Method({ m, onSetPrimary, onRemove }) {
         )}
         <button
           onClick={onRemove}
-          className="btn-icon w-9 h-9"
+          className="btn-icon"
           aria-label="Eliminar"
         >
           <Icon name="delete" className="text-[20px]" />

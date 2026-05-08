@@ -321,7 +321,7 @@ function ChatModal({ open, onClose }) {
           <button
             key={q}
             onClick={() => sendMessage(q)}
-            className="px-3 py-1 rounded-full text-caption font-semibold border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition"
+            className="px-3 min-h-[40px] py-1.5 rounded-full text-caption font-semibold border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition"
           >
             {q}
           </button>

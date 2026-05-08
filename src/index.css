@@ -251,12 +251,29 @@ textarea {
   }
 }
 
+/* ── Shared layout token: mobile bottom nav height ─────────────────────────── */
+/* BottomNav: ~56px items + 16px padding = 72px. Adjust this one value if nav changes. */
+:root {
+  --bottom-nav-h: 72px;
+}
+
 /* Checkout sticky bar — above BottomNav on mobile, true bottom on md+ */
 .checkout-sticky {
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-h));
 }
 @media (min-width: 768px) {
   .checkout-sticky {
     bottom: 0;
+  }
+}
+
+/* Wizard / Emission sticky footer */
+.wizard-footer-sticky {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-h));
+}
+@media (min-width: 768px) {
+  .wizard-footer-sticky {
+    bottom: 0;
+    position: sticky;
   }
 }

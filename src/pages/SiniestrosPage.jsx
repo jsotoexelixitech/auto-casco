@@ -194,7 +194,7 @@ export default function SiniestrosPage() {
                     ${s.monto.toLocaleString()}
                   </p>
                 </div>
-                <span className="btn-ghost py-1.5 px-3 group-hover:bg-primary group-hover:text-on-primary group-hover:border-primary transition shrink-0">
+                <span className="btn-ghost group-hover:bg-primary group-hover:text-on-primary group-hover:border-primary transition shrink-0">
                   <span className="hidden sm:inline">Ver detalle</span>
                   <Icon name="arrow_forward" className="text-[16px]" />
                 </span>
@@ -269,14 +269,14 @@ export default function SiniestrosPage() {
           </div>
           <div>
             <label className="label">Severidad</label>
-            <div className="grid grid-cols-3 gap-1">
+                  <div className="grid grid-cols-3 gap-1.5">
               {SEVERIDADES.map((sv) => (
                 <button
                   type="button"
                   key={sv.v}
                   onClick={() => setDraft({ ...draft, severidad: sv.v })}
                   className={clsx(
-                    'py-2.5 rounded-lg text-label-md font-bold border transition',
+                    'min-h-[44px] rounded-lg text-label-md font-bold border transition',
                     draft.severidad === sv.v && sv.tone === 'success' &&
                       'bg-success text-on-success border-success',
                     draft.severidad === sv.v && sv.tone === 'warning' &&

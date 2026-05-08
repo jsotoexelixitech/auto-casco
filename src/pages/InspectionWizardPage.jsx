@@ -178,7 +178,7 @@ export default function InspectionWizardPage() {
         <Stepper steps={STEPS} current={step} onStepClick={(i) => setStep(i)} />
       </div>
 
-      <div className="route-enter pb-2" key={step}>
+      <div className="route-enter pb-2 md:pb-0" key={step}>
         {step === 0 && <Step1Documents state={state} />}
         {step === 1 && <Step2Location state={state} />}
         {step === 2 && <Step3Photos state={state} />}
@@ -189,11 +189,8 @@ export default function InspectionWizardPage() {
       </div>
 
       {/* Sticky bottom bar — sits above mobile bottom nav */}
-      <div
-        className="sticky z-20 mt-4"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 78px)' }}
-      >
-        <div className="md:static md:bottom-auto card-elev2 p-2.5 sm:p-3 flex items-center justify-between gap-2 bg-white/95 backdrop-blur-xl">
+      <div className="fixed inset-x-0 md:left-64 z-30 wizard-footer-sticky md:relative md:inset-auto mt-4">
+        <div className="card-elev2 p-2.5 sm:p-3 flex items-center justify-between gap-2 bg-white/95 backdrop-blur-xl border-t border-outline-variant/40 shadow-[0_-4px_16px_rgba(15,26,90,0.10)]">
           <button onClick={back} disabled={step === 0} className="btn-soft flex-1 sm:flex-none">
             <Icon name="arrow_back" /> <span className="hidden xs:inline">Anterior</span>
           </button>

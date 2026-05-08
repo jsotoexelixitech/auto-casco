@@ -135,7 +135,7 @@ export default function Step3Photos({ state }) {
                 data-seq={s.id}
                 onClick={() => setActiveSeq(s.id)}
                 className={clsx(
-                  'shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-full border-2 transition-all',
+                  'shrink-0 snap-start flex items-center gap-2 px-3 min-h-[44px] py-2.5 rounded-full border-2 transition-all',
                   active
                     ? 'bg-gradient-brand-soft text-on-primary border-primary shadow-elev-primary'
                     : ph.uploaded
@@ -290,8 +290,8 @@ export default function Step3Photos({ state }) {
           </div>
         )}
 
-        {photoState.uploaded && photoState.analyzed && (
-          <button onClick={goNextSeq} className="btn-primary w-full mt-2 hidden sm:flex">
+              {photoState.uploaded && photoState.analyzed && (
+          <button onClick={goNextSeq} className="btn-primary w-full mt-2">
             <Icon name="arrow_forward" /> Siguiente secuencia
           </button>
         )}
@@ -336,7 +336,7 @@ export default function Step3Photos({ state }) {
                         onClick={() => setPiezaEstado(activeSeq, pieza, v)}
                         title={ESTADO_PIEZA_LABEL[v]}
                         className={clsx(
-                          'py-2 rounded-lg text-label-md font-bold border transition active:scale-95',
+                          'min-h-[44px] py-2 rounded-lg text-label-md font-bold border transition active:scale-95',
                           active && tone === 'success' &&
                             'bg-success text-on-success border-success',
                           active && tone === 'warning' &&

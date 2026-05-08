@@ -152,7 +152,7 @@ export default function InspectionsListPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 sm:px-4 py-1.5 rounded-full text-label-md transition whitespace-nowrap shrink-0 ${
+              className={`px-3 sm:px-4 min-h-[40px] py-1.5 rounded-full text-label-md transition whitespace-nowrap shrink-0 ${
                 filter === f
                   ? 'bg-gradient-brand-soft text-on-primary shadow-elev-primary'
                   : 'text-on-surface-variant hover:bg-surface-container'

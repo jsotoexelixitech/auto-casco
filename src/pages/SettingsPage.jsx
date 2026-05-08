@@ -292,13 +292,13 @@ function RadioGroup({ label, hint, value, onChange, options }) {
     <div>
       <p className="font-semibold text-on-surface">{label}</p>
       {hint && <p className="text-caption text-on-surface-variant mb-2">{hint}</p>}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 xs:grid-cols-3 gap-2">
         {options.map((o) => (
           <button
             key={o.v}
             onClick={() => onChange(o.v)}
             className={clsx(
-              'p-3 rounded-xl border-2 transition flex flex-col items-center gap-1 active:scale-95',
+              'p-3 min-h-[64px] rounded-xl border-2 transition flex flex-col items-center gap-1 active:scale-95',
               value === o.v
                 ? 'border-primary bg-primary-fixed/40 ring-2 ring-primary/20 text-primary'
                 : 'border-outline-variant text-on-surface-variant hover:border-primary/40',
@@ -355,7 +355,7 @@ function ActionRow({ icon, title, desc, action, onAction, tone = 'primary' }) {
       <button
         onClick={onAction}
         className={clsx(
-          'shrink-0 py-1.5 px-3 rounded-lg text-label-md font-bold transition',
+          'shrink-0 min-h-[44px] px-3 rounded-lg text-label-md font-bold transition',
           tone === 'error'
             ? 'bg-error-container text-on-error-container hover:bg-error hover:text-on-error'
             : 'btn-soft',

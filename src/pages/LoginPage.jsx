@@ -197,23 +197,23 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPwd((s) => !s)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 btn-icon w-8 h-8"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 btn-icon"
                     aria-label="Mostrar/ocultar contraseña"
                   >
                     <Icon name={showPwd ? 'visibility_off' : 'visibility'} className="text-[20px]" />
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-between text-caption">
-                <label className="flex items-center gap-1.5 text-on-surface-variant">
+              <div className="flex items-center justify-between gap-2 flex-wrap text-caption">
+                <label className="flex items-center gap-1.5 text-on-surface-variant min-h-[44px]">
                   <input
                     type="checkbox"
                     defaultChecked
-                    className="rounded text-primary focus:ring-primary/20"
+                    className="w-4 h-4 rounded text-primary focus:ring-primary/20"
                   />
                   Mantener sesión
                 </label>
-                <a href="#" className="text-primary hover:underline font-semibold">
+                <a href="#" className="text-primary hover:underline font-semibold min-h-[44px] flex items-center">
                   ¿Olvidaste tu contraseña?
                 </a>
               </div>

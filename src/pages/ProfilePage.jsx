@@ -238,7 +238,7 @@ function SecurityRow({ icon, title, value, action, onAction, tone }) {
         <p className="font-bold text-on-surface truncate">{title}</p>
         <p className="text-caption text-on-surface-variant truncate">{value}</p>
       </div>
-      <button onClick={onAction} className="btn-soft py-1.5 px-3 shrink-0">
+      <button onClick={onAction} className="btn-soft shrink-0">
         {action}
       </button>
     </div>

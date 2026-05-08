@@ -67,7 +67,7 @@ export default function Step4Damages({ state }) {
               <Icon name="report" className="text-error text-[24px]" filled />
               <h3 className="text-headline-md text-on-surface truncate">Daños identificados</h3>
             </div>
-            <button onClick={() => setShowAdd(true)} className="btn-accent py-1.5 px-3 shrink-0">
+            <button onClick={() => setShowAdd(true)} className="btn-accent shrink-0">
               <Icon name="add" /> <span className="hidden sm:inline">Agregar</span>
             </button>
           </div>
@@ -115,7 +115,8 @@ export default function Step4Damages({ state }) {
                     </div>
                     <button
                       onClick={() => removeDamage(d.id)}
-                      className="p-1 text-on-surface-variant hover:text-error shrink-0"
+                      aria-label="Eliminar daño"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error-container/60 transition shrink-0"
                     >
                       <Icon name="delete" />
                     </button>
@@ -136,13 +137,13 @@ export default function Step4Damages({ state }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2">
                   <label className="label">Tipo</label>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {DAMAGE_TYPES.map((t) => (
                       <button
                         key={t.id}
                         onClick={() => setDraft({ ...draft, tipo: t.id })}
                         className={clsx(
-                          'px-3 py-1.5 rounded-full text-caption font-semibold border transition',
+                          'px-3 min-h-[40px] rounded-full text-label-md font-semibold border transition',
                           draft.tipo === t.id
                             ? 'bg-primary text-on-primary border-primary'
                             : 'border-outline-variant text-on-surface-variant hover:border-primary',
@@ -155,13 +156,13 @@ export default function Step4Damages({ state }) {
                 </div>
                 <div className="sm:col-span-2">
                   <label className="label">Severidad</label>
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {SEVERITY.map((s) => (
                       <button
                         key={s.id}
                         onClick={() => setDraft({ ...draft, severidad: s.id })}
                         className={clsx(
-                          'py-1.5 rounded-lg text-label-md border transition',
+                          'min-h-[44px] rounded-lg text-label-md border transition font-semibold',
                           draft.severidad === s.id && s.tone === 'success' &&
                             'bg-success text-on-success border-success',
                           draft.severidad === s.id && s.tone === 'warning' &&

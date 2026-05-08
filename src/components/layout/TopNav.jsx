@@ -233,7 +233,7 @@ export default function TopNav({ onMenuClick }) {
           <div ref={profileRef} className="relative">
             <button
               onClick={() => setOpenProfile((s) => !s)}
-              className="ml-1 flex items-center gap-2 p-1 rounded-full hover:bg-surface-container transition"
+              className="ml-1 flex items-center gap-2 p-1.5 min-h-[44px] min-w-[44px] rounded-full hover:bg-surface-container transition"
               aria-label="Perfil"
             >
               <div
@@ -254,7 +254,7 @@ export default function TopNav({ onMenuClick }) {
               </div>
             </button>
             {openProfile && (
-              <div className="absolute right-0 top-full mt-2 w-64 card-elev2 p-1 animate-fade-in">
+              <div className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1rem)] card-elev2 p-1 animate-fade-in">
                 <div className="p-3 border-b border-outline-variant/50">
                   <p className="font-bold text-on-surface truncate">{user?.name}</p>
                   <p className="text-caption text-on-surface-variant truncate">
@@ -348,7 +348,7 @@ function SearchPalette({ search, setSearch, results, onClose, onSelect, getVehic
           <kbd className="hidden sm:inline-flex items-center text-[11px] text-on-surface-variant border border-outline-variant px-1.5 py-0.5 rounded">
             ESC
           </kbd>
-          <button onClick={onClose} className="btn-icon w-9 h-9 sm:hidden" aria-label="Cerrar">
+          <button onClick={onClose} className="btn-icon sm:hidden" aria-label="Cerrar">
             <Icon name="close" />
           </button>
         </div>
