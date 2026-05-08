@@ -250,3 +250,13 @@ textarea {
     bottom: 1.5rem;
   }
 }
+
+/* Checkout sticky bar — above BottomNav on mobile, true bottom on md+ */
+.checkout-sticky {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+}
+@media (min-width: 768px) {
+  .checkout-sticky {
+    bottom: 0;
+  }
+}
