@@ -189,7 +189,7 @@ export default function InspectionWizardPage() {
       </div>
 
       {/* Sticky bottom bar — sits above mobile bottom nav */}
-      <div className="fixed inset-x-0 md:left-64 z-30 wizard-footer-sticky md:relative md:inset-auto mt-4">
+      <div className="fixed inset-x-0 md:left-64 z-30 wizard-footer-sticky md:sticky md:bottom-0 md:inset-auto mt-4">
         <div className="card-elev2 p-2.5 sm:p-3 flex items-center justify-between gap-2 bg-white/95 backdrop-blur-xl border-t border-outline-variant/40 shadow-[0_-4px_16px_rgba(15,26,90,0.10)]">
           <button onClick={back} disabled={step === 0} className="btn-soft flex-1 sm:flex-none">
             <Icon name="arrow_back" /> <span className="hidden xs:inline">Anterior</span>

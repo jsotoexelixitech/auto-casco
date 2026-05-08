@@ -267,13 +267,8 @@ textarea {
   }
 }
 
-/* Wizard / Emission sticky footer */
+/* Wizard / Emission sticky footer — only the bottom offset on mobile.
+   Desktop positioning is handled via Tailwind md:sticky md:bottom-0 md:inset-auto */
 .wizard-footer-sticky {
   bottom: calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-h));
-}
-@media (min-width: 768px) {
-  .wizard-footer-sticky {
-    bottom: 0;
-    position: sticky;
-  }
 }
