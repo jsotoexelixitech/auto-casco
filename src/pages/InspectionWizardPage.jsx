@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import clsx from 'clsx'
 import PageHeader from '../components/ui/PageHeader'
 import Stepper from '../components/ui/Stepper'
 import Icon from '../components/ui/Icon'
@@ -14,11 +15,19 @@ import { useToast } from '../context/ToastContext'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 
-const STEPS = [
+const STEPS_PERITO = [
   { id: 'docs', label: 'Documentos / OCR' },
   { id: 'loc', label: 'Ubicación' },
-  { id: 'photos', label: 'Captura de fotos' },
-  { id: 'damage', label: 'Daños y Video 360°' },
+  { id: 'photos', label: 'Fotos + Piezas' },
+  { id: 'damage', label: 'Daños · Descripción · IA' },
+  { id: 'review', label: 'Revisión técnica' },
+]
+
+const STEPS_CLIENTE = [
+  { id: 'docs', label: 'Documentos' },
+  { id: 'loc', label: 'Ubicación' },
+  { id: 'photos', label: 'Fotografías' },
+  { id: 'damage', label: 'Daños y Video' },
   { id: 'review', label: 'Revisión' },
 ]
 
@@ -35,6 +44,9 @@ export default function InspectionWizardPage() {
   const toast = useToast()
   const { addInspection, addActivity, getInspection, getVehicle } = useData()
   const { user } = useAuth()
+
+  const isPerito = user?.role === 'perito' || user?.role === 'admin'
+  const STEPS = isPerito ? STEPS_PERITO : STEPS_CLIENTE
 
   const isEditing = !!id
   const existingInspection = isEditing ? getInspection(id) : null
@@ -120,7 +132,7 @@ export default function InspectionWizardPage() {
         />
         <Step5Review state={state} inspectionNumber={existingInspection.numero} />
         {existingInspection.estado === 'Pendiente de Validación' &&
-          (user?.role === 'perito' || user?.role === 'admin') && (
+          isPerito && (
             <div className="mt-4 card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h3 className="text-headline-md text-on-surface">
@@ -168,9 +180,22 @@ export default function InspectionWizardPage() {
         title="Captura de Inspección"
         subtitle={TIPO_LABEL[state.tipoInspeccion]}
         actions={
-          <button onClick={() => navigate('/inspecciones')} className="btn-soft">
-            <Icon name="close" /> <span className="hidden sm:inline">Cancelar</span>
-          </button>
+          <>
+            <span
+              className={clsx(
+                'hidden xs:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-md font-bold border',
+                isPerito
+                  ? 'bg-primary/10 text-primary border-primary/30'
+                  : 'bg-success-container text-on-success-container border-success/30',
+              )}
+            >
+              <Icon name={isPerito ? 'admin_panel_settings' : 'person'} className="text-[16px]" filled />
+              {isPerito ? 'Modo Perito' : 'Modo Cliente'}
+            </span>
+            <button onClick={() => navigate('/inspecciones')} className="btn-soft">
+              <Icon name="close" /> <span className="hidden sm:inline">Cancelar</span>
+            </button>
+          </>
         }
       />
 
