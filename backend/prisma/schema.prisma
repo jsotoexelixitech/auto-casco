@@ -1,0 +1,169 @@
+// Auto Casco — La Mundial de Seguros
+// Prisma schema — SQLite en dev, PostgreSQL en prod (cambiar provider)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Roles ────────────────────────────────────────────────────────────────
+// SQLite no soporta enums nativos. Validamos en application layer.
+// Valores válidos: admin | perito | asegurado | intermediario
+
+model User {
+  id           String   @id @default(cuid())
+  legacyId     String?  @unique // mantiene IDs del frontend (u-001, ...)
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("asegurado")
+  title        String?
+  avatar       String?
+  color        String?
+  phone        String?
+  documento    String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  vehicles    Vehicle[]
+  policies    Policy[]
+  inspections Inspection[] @relation("PeritoInspections")
+
+  @@index([email])
+  @@index([role])
+}
+
+model Vehicle {
+  id        String   @id @default(cuid())
+  legacyId  String?  @unique
+  placa     String   @unique
+  marca     String
+  modelo    String
+  version   String?
+  anio      Int
+  color     String?
+  tipo      String?
+  serial    String?  @unique
+  image     String?
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  policies    Policy[]
+  inspections Inspection[]
+
+  @@index([ownerId])
+  @@index([placa])
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  legacyId    String?  @unique
+  nombre      String
+  descripcion String?
+  precioDia   Float
+  icon        String?
+  features    String // JSON serializado
+  recomendado Boolean  @default(false)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  policies Policy[]
+}
+
+model Policy {
+  id              String   @id @default(cuid())
+  legacyId        String?  @unique
+  numero          String   @unique
+  estado          String   @default("Activa") // Activa | Inactiva | Vencida
+  modalidad       String   @default("dias")    // dias | saldo
+  diasContratados Int      @default(0)
+  diasRestantes   Int      @default(0)
+  saldoDisponible Float    @default(0)
+  fechaInicio     DateTime @default(now())
+  fechaFin        DateTime?
+  vehicleId       String
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  holderId        String
+  holder          User     @relation(fields: [holderId], references: [id], onDelete: Cascade)
+  planId          String?
+  plan            Plan?    @relation(fields: [planId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pagos      Payment[]
+  siniestros Siniestro[]
+
+  @@index([holderId])
+  @@index([vehicleId])
+  @@index([estado])
+}
+
+model Inspection {
+  id               String   @id @default(cuid())
+  legacyId         String?  @unique
+  numero           String   @unique
+  tipo             String   @default("inicial") // inicial | mantenimiento | siniestro
+  estado           String   @default("borrador") // borrador | en_revision | aprobada | rechazada
+  vehicleId        String
+  vehicle          Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  peritoId         String?
+  perito           User?    @relation("PeritoInspections", fields: [peritoId], references: [id])
+  ubicacion        String?
+  latitude         Float?
+  longitude        Float?
+  fotos            String   @default("[]") // JSON serializado de URLs/metadata
+  danios           String   @default("[]") // JSON serializado
+  video360Url      String?
+  observaciones    String?
+  fechaCaptura     DateTime @default(now())
+  fechaAprobacion  DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([vehicleId])
+  @@index([peritoId])
+  @@index([estado])
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  legacyId  String?  @unique
+  policyId  String?
+  policy    Policy?  @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  concepto  String
+  metodo    String   @default("Saldo")
+  monto     Float
+  estado    String   @default("Completado")
+  fecha     DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([policyId])
+  @@index([estado])
+}
+
+model Siniestro {
+  id          String   @id @default(cuid())
+  legacyId    String?  @unique
+  numero      String   @unique
+  policyId    String
+  policy      Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  tipo        String   @default("colision")
+  severidad   String   @default("leve") // leve | moderado | grave
+  estado      String   @default("Reportado")
+  descripcion String?
+  ubicacion   String?
+  fechaEvento DateTime @default(now())
+  timeline    String   @default("[]") // JSON serializado
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([policyId])
+  @@index([estado])
+}
