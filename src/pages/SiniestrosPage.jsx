@@ -30,8 +30,8 @@ export default function SiniestrosPage() {
       />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
-        <StatCard icon="car_crash" label="Total" value={siniestros.length} tone="primary" />
-        <StatCard icon="pending_actions" label="En análisis" value={enAnalisis} tone="accent" />
+        <StatCard icon="car_crash" label="Total" value={siniestros.length} tone="deep" />
+        <StatCard icon="pending_actions" label="En análisis" value={enAnalisis} tone="warning" />
         <StatCard icon="paid" label="Monto" value={`$${total.toLocaleString()}`} />
         <StatCard
           icon="trending_down"

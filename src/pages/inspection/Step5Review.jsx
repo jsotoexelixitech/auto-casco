@@ -42,83 +42,159 @@ export default function Step5Review({ state, inspectionNumber }) {
 
   const asegurabilidad = calcularAsegurabilidad(photos)
 
+  /* ─── CLIENT VIEW ─────────────────────────────────────────────────── */
+  if (!isPerito) {
+    return (
+      <div className="flex flex-col gap-4">
+        {/* Brand hero confirmation */}
+        <div className="rounded-2xl p-5 sm:p-6 relative overflow-hidden text-white"
+          style={{ background: 'linear-gradient(135deg, #0F1A5A 0%, #162A7F 60%, #E84F51 100%)' }}>
+          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl" style={{ background: 'rgba(232,79,81,0.25)' }} />
+          <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full blur-2xl" style={{ background: 'rgba(255,255,255,0.05)' }} />
+          <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+              <Icon name="task_alt" className="text-[36px] text-white" filled />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] uppercase tracking-widest opacity-70 mb-0.5">La Mundial de Seguros</p>
+              <h2 className="text-headline-lg sm:text-display-sm font-bold leading-tight">
+                ¡Inspección completada!
+              </h2>
+              <p className="opacity-85 mt-1 text-body-md">
+                Número <span className="font-mono font-bold">{inspectionNumber}</span> — tus fotos fueron enviadas para revisión.
+              </p>
+            </div>
+          </div>
+          <div className="relative mt-4 pt-4 border-t border-white/20 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <Stat label="Fotos capturadas" value={`${totals.uploaded} / ${PHOTO_SEQUENCES.length}`} />
+            <Stat label="Estado" value="En revisión" />
+            <Stat label="Video 360°" value={video360.uploaded ? 'Cargado ✓' : 'No cargado'} />
+          </div>
+        </div>
+
+        {/* Info message */}
+        <div className="flex items-start gap-3 p-4 bg-brand-50 border border-brand-200 rounded-xl">
+          <div className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-elev-primary">
+            <Icon name="info" className="text-[20px]" filled />
+          </div>
+          <div>
+            <p className="font-bold text-primary">¿Qué pasa ahora?</p>
+            <p className="text-body-md text-on-surface mt-0.5">
+              Un perito de La Mundial de Seguros revisará tu inspección y te notificará el resultado. Puedes cerrar esta pantalla.
+            </p>
+          </div>
+        </div>
+
+        {/* Vehicle + holder */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="card p-4 sm:p-5">
+            <h3 className="text-headline-md text-on-surface mb-3 flex items-center gap-2">
+              <Icon name="person" className="text-primary" filled /> Datos del Tomador
+            </h3>
+            <Field label="Tipo" value={docs.naturaleza === 'juridica' ? 'Persona Jurídica' : 'Persona Natural'} />
+            {docs.naturaleza === 'juridica' ? (
+              <Field label="Razón Social" value={tomador.razonSocial} />
+            ) : (
+              <Field label="Nombre" value={`${tomador.nombres} ${tomador.apellidos}`} />
+            )}
+            <Field label="Documento" value={tomador.documento} mono />
+          </div>
+          <div className="card p-4 sm:p-5">
+            <h3 className="text-headline-md text-on-surface mb-3 flex items-center gap-2">
+              <Icon name="directions_car" className="text-primary" filled /> Datos del Vehículo
+            </h3>
+            <Field label="Marca / Modelo" value={`${vehiculo.marca || '—'} ${vehiculo.modelo || ''}`} />
+            <Field label="Placa" value={vehiculo.placa || '—'} mono />
+            <Field label="Color" value={vehiculo.color || '—'} />
+          </div>
+        </div>
+
+        {/* Photo grid — no AI indicators */}
+        <div className="card p-4 sm:p-5">
+          <h3 className="text-headline-md text-on-surface mb-3">Fotos capturadas</h3>
+          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-2">
+            {PHOTO_SEQUENCES.map((s) => {
+              const ph = photos[s.id]
+              return (
+                <div key={s.id} className={clsx('rounded-xl overflow-hidden relative aspect-square', ph?.uploaded ? 'border border-success/30' : 'border border-outline-variant/50 bg-surface-container-low')}>
+                  {ph?.uploaded ? (
+                    <img src={ph.thumbnail} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-on-surface-variant">
+                      <Icon name="image_not_supported" className="text-[20px]" />
+                      <span className="text-[10px] mt-1">Sin foto</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-1.5 py-1 text-white">
+                    <p className="text-[10px] font-bold leading-tight line-clamp-2">{s.nombre}</p>
+                  </div>
+                  {ph?.uploaded && (
+                    <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-success flex items-center justify-center">
+                      <Icon name="check" className="text-[12px] text-white" />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Integration info */}
+        <div className="card p-4 sm:p-5">
+          <h3 className="text-headline-md text-on-surface mb-3">Próximos pasos</h3>
+          <Integration icon="gavel" label="Revisión por perito calificado" />
+          <Integration icon="notifications_active" label="Notificación del resultado" />
+          <Integration icon="edit_document" label="Emisión de póliza (si aplica)" />
+        </div>
+      </div>
+    )
+  }
+
+  /* ─── PERITO VIEW ──────────────────────────────────────────────────── */
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2 flex flex-col gap-4">
-        {/* Asegurabilidad verdict */}
-        <div
-          className={clsx(
-            'rounded-2xl p-4 sm:p-5 flex items-start gap-3 border-2',
-            asegurabilidad.asegurable
-              ? 'bg-success-container/40 border-success/50 text-on-success-container'
-              : 'bg-error-container/40 border-error/50 text-on-error-container',
-          )}
-        >
-          <div
-            className={clsx(
-              'w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
-              asegurabilidad.asegurable ? 'bg-success text-on-success' : 'bg-error text-on-error',
-            )}
-          >
-            <Icon
-              name={asegurabilidad.asegurable ? 'verified' : 'gpp_bad'}
-              className="text-[26px]"
-              filled
-            />
+        {/* Asegurabilidad verdict — perito only */}
+        <div className={clsx('rounded-2xl p-4 sm:p-5 flex items-start gap-3 border-2',
+          asegurabilidad.asegurable ? 'bg-success-container/40 border-success/50 text-on-success-container' : 'bg-error-container/40 border-error/50 text-on-error-container',
+        )}>
+          <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center shrink-0', asegurabilidad.asegurable ? 'bg-success text-on-success' : 'bg-error text-on-error')}>
+            <Icon name={asegurabilidad.asegurable ? 'verified' : 'gpp_bad'} className="text-[26px]" filled />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-caption uppercase tracking-widest font-bold opacity-70 mb-0.5">
-              Resultado de Asegurabilidad
-            </p>
+            <p className="text-caption uppercase tracking-widest font-bold opacity-70 mb-0.5">Resultado de Asegurabilidad</p>
             <h3 className="text-headline-lg font-bold leading-tight">
               {asegurabilidad.asegurable ? 'VEHÍCULO ASEGURABLE' : 'VEHÍCULO NO ASEGURABLE'}
             </h3>
             <p className="text-body-md mt-1 opacity-90">
               {asegurabilidad.asegurable
-                ? `El vehículo cumple los criterios de asegurabilidad. Piezas R: ${asegurabilidad.totalR} · M: ${asegurabilidad.totalM}`
-                : `El vehículo supera el límite permitido. Piezas R: ${asegurabilidad.totalR} · M: ${asegurabilidad.totalM} · Total R+M: ${asegurabilidad.totalRM} (máx. 14)`}
+                ? `Cumple criterios. Piezas R: ${asegurabilidad.totalR} · M: ${asegurabilidad.totalM}`
+                : `Supera límite. Piezas R: ${asegurabilidad.totalR} · M: ${asegurabilidad.totalM} · Total R+M: ${asegurabilidad.totalRM} (máx. 14)`}
             </p>
             <div className="flex flex-wrap gap-2 mt-2">
-              <span className={clsx('px-2.5 py-1 rounded-full text-caption font-bold border', asegurabilidad.asegurable ? 'bg-success/20 border-success/40' : 'bg-error/20 border-error/40')}>
-                {asegurabilidad.totalR} Regulares
-              </span>
-              <span className={clsx('px-2.5 py-1 rounded-full text-caption font-bold border', asegurabilidad.totalM > 0 ? 'bg-error/20 border-error/40' : 'bg-success/10 border-success/30')}>
-                {asegurabilidad.totalM} Malos
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-caption font-bold border bg-surface-container/50 border-outline-variant/50 text-on-surface">
-                {totals.piezas} Total piezas
-              </span>
+              <span className={clsx('px-2.5 py-1 rounded-full text-caption font-bold border', asegurabilidad.asegurable ? 'bg-success/20 border-success/40' : 'bg-error/20 border-error/40')}>{asegurabilidad.totalR} Regulares</span>
+              <span className={clsx('px-2.5 py-1 rounded-full text-caption font-bold border', asegurabilidad.totalM > 0 ? 'bg-error/20 border-error/40' : 'bg-success/10 border-success/30')}>{asegurabilidad.totalM} Malos</span>
+              <span className="px-2.5 py-1 rounded-full text-caption font-bold border bg-surface-container/50 border-outline-variant/50 text-on-surface">{totals.piezas} Total piezas</span>
             </div>
           </div>
         </div>
 
-        {/* Hero summary */}
-        <div className="card-elev2 p-4 sm:p-5 overflow-hidden relative bg-gradient-brand-soft text-on-primary">
-          <div className="absolute -top-10 -right-10 w-48 h-48 bg-accent-500/30 rounded-full blur-3xl" />
+        {/* Hero summary — perito */}
+        <div className="card-elev2 p-4 sm:p-5 overflow-hidden relative text-white rounded-2xl" style={{ background: 'linear-gradient(135deg, #091133 0%, #0F1A5A 60%, #162A7F 100%)' }}>
+          <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full blur-3xl" style={{ background: 'rgba(232,79,81,0.3)' }} />
           <div className="relative z-10">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 flex-wrap">
               <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
-                <Icon name="task_alt" className="text-accent-300 text-[26px]" filled />
+                <Icon name="admin_panel_settings" className="text-white text-[26px]" filled />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-caption opacity-80 uppercase tracking-wider font-bold">
-                  Inspección
-                </p>
-                <h2 className="text-headline-lg leading-tight truncate">
-                  {inspectionNumber}
-                </h2>
+                <p className="text-[11px] opacity-70 uppercase tracking-widest font-bold">La Mundial de Seguros · Perito</p>
+                <h2 className="text-headline-lg leading-tight truncate">{inspectionNumber}</h2>
               </div>
-              <StatusChip
-                tone="accent"
-                status="Pendiente Validación"
-                icon="rule"
-                size="sm"
-                className="shrink-0"
-              />
+              <StatusChip tone="warning" status="Pendiente Validación" icon="rule" size="sm" className="shrink-0" />
             </div>
             <p className="text-body-md sm:text-body-lg opacity-90 mb-3">
-              Revisa el resumen de la inspección antes de enviarla. Una vez
-              enviada, se conectará con los módulos de cotización y emisión.
+              Revisa el informe técnico completo antes de enviar para validación.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               <Stat label="Fotos" value={`${totals.uploaded}/${PHOTO_SEQUENCES.length}`} />
@@ -286,8 +362,12 @@ export default function Step5Review({ state, inspectionNumber }) {
       </div>
 
       <aside className="flex flex-col gap-4">
+        {/* AI summary pills — perito only */}
         <div className="card p-4 sm:p-5">
-          <h3 className="text-headline-md text-on-surface mb-3">Resumen IA</h3>
+          <h3 className="text-headline-md text-on-surface mb-3 flex items-center gap-2">
+            <Icon name="auto_awesome" className="text-primary text-[20px]" filled />
+            Resumen IA
+          </h3>
           <DataRow label="Tipo de inspección" value={tipoInspeccion} />
           <DataRow label="Ubicación" value={ubicacion.direccion || '—'} />
           <div className="grid grid-cols-3 gap-1.5 mt-3 text-center">
@@ -299,25 +379,21 @@ export default function Step5Review({ state, inspectionNumber }) {
 
         <div className="card p-4 sm:p-5">
           <h3 className="text-headline-md text-on-surface mb-3">Integración</h3>
-          <p className="text-body-md text-on-surface-variant mb-3">
-            Al enviar, esta inspección se conectará con:
-          </p>
+          <p className="text-body-md text-on-surface-variant mb-3">Al enviar, esta inspección se conectará con:</p>
           <Integration icon="request_quote" label="Módulo de Cotización" />
           <Integration icon="edit_document" label="Módulo de Emisión" />
           <Integration icon="receipt_long" label="Trazabilidad / Auditoría" />
         </div>
 
-        <div className="card-elev2 p-4 sm:p-5 bg-gradient-brand-soft text-on-primary relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent-500/30 rounded-full blur-3xl" />
+        <div className="card-elev2 p-4 sm:p-5 text-white relative overflow-hidden rounded-2xl" style={{ background: 'linear-gradient(135deg, #091133 0%, #0F1A5A 60%, #E84F51 100%)' }}>
+          <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full blur-2xl" style={{ background: 'rgba(232,79,81,0.35)' }} />
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
-              <Icon name="info" className="text-accent-300" filled />
-              <h4 className="font-bold">Estado al cerrar</h4>
+              <Icon name="verified_user" className="text-accent-300" filled />
+              <h4 className="font-bold">Estado al enviar</h4>
             </div>
             <p className="text-body-md opacity-90">
-              La inspección quedará en estado{' '}
-              <strong className="text-accent-300">Pendiente de Validación</strong>{' '}
-              hasta que un perito confirme el resultado.
+              Quedará en <strong style={{ color: '#ff8c8e' }}>Pendiente de Validación</strong> hasta la aprobación del perito.
             </p>
           </div>
         </div>

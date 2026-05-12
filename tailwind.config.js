@@ -136,6 +136,17 @@ export default {
         'warning-container': '#FEF3C7',
         'on-warning-container': '#78350F',
 
+        // info — Azul Pennsylvania MEDIO oficial del Manual de Identidad (shade #162A7F).
+        // Es el color intermedio entre #091133 (deep) y #0F1A5A (primary).
+        info: '#162A7F',
+        'on-info': '#ffffff',
+        'info-container': '#dde1f4',
+        'on-info-container': '#091133',
+
+        // deep — Navy Deep oficial (shade más profundo del manual). Para KPI maestros / totales.
+        deep: '#091133',
+        'on-deep': '#ffffff',
+
         // Alineado con Suscripcion-rcv (`--color-page-bg`, `--color-text-primary`)
         background: '#F4F6FB',
         'on-background': '#091133',

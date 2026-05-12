@@ -37,7 +37,6 @@ const SAMPLE_IMAGES = {
     'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&w=1400&q=80',
 }
 
-// AI randomly classifies pieces during simulation
 const simulateAiClassification = (piezas) => {
   const estados = [ESTADO_PIEZA.BUENO, ESTADO_PIEZA.BUENO, ESTADO_PIEZA.BUENO, ESTADO_PIEZA.REGULAR, ESTADO_PIEZA.MALO]
   return piezas.reduce((acc, p) => {
@@ -47,23 +46,23 @@ const simulateAiClassification = (piezas) => {
 }
 
 /**
- * Top-down car diagram SVG with zone highlighting
- * Zones: front, front-right, rear, rear-right, front-left, rear-left, serial, interior, dashboard, trunk, damages
+ * Top-down car diagram – uses brand navy (#0F1A5A) for done, green for active/next.
+ * For perito: shows orange dot when AI found R/M pieces.
+ * For client: no damage indicators shown.
  */
-function CarDiagram({ sequences, photos, activeSeqId }) {
-  // Zone positions in the SVG (top-down car view, 240×420 viewBox)
+function CarDiagram({ sequences, photos, activeSeqId, showDamageIndicators }) {
   const zones = {
-    'front':       { label: 'Frontal', x: 80,  y: 10,  w: 80,  h: 55 },
-    'front-right': { label: 'Del.Der', x: 160, y: 60,  w: 55,  h: 100 },
-    'rear-right':  { label: 'Tras.Der', x: 160, y: 260, w: 55,  h: 100 },
-    'rear':        { label: 'Trasera', x: 80,  y: 360, w: 80,  h: 55 },
-    'rear-left':   { label: 'Tras.Izq', x: 25,  y: 260, w: 55,  h: 100 },
-    'front-left':  { label: 'Del.Izq', x: 25,  y: 60,  w: 55,  h: 100 },
-    'serial':      { label: 'Serial', x: 95,  y: 185, w: 50,  h: 30 },
-    'interior':    { label: 'Interior', x: 80,  y: 160, w: 80,  h: 60 },
-    'dashboard':   { label: 'Tablero', x: 85,  y: 140, w: 70,  h: 25 },
-    'trunk':       { label: 'Maletero', x: 85,  y: 320, w: 70,  h: 40 },
-    'damages':     { label: 'Daños', x: 85,  y: 220, w: 70,  h: 25 },
+    'front':       { label: 'Frontal',   x: 80,  y: 10,  w: 80, h: 55 },
+    'front-right': { label: 'Del.Der',   x: 160, y: 60,  w: 55, h: 100 },
+    'rear-right':  { label: 'Tras.Der',  x: 160, y: 260, w: 55, h: 100 },
+    'rear':        { label: 'Trasera',   x: 80,  y: 360, w: 80, h: 55 },
+    'rear-left':   { label: 'Tras.Izq',  x: 25,  y: 260, w: 55, h: 100 },
+    'front-left':  { label: 'Del.Izq',   x: 25,  y: 60,  w: 55, h: 100 },
+    'serial':      { label: 'Serial',    x: 95,  y: 185, w: 50, h: 30 },
+    'interior':    { label: 'Interior',  x: 80,  y: 160, w: 80, h: 60 },
+    'dashboard':   { label: 'Tablero',   x: 85,  y: 140, w: 70, h: 25 },
+    'trunk':       { label: 'Maletero',  x: 85,  y: 320, w: 70, h: 40 },
+    'damages':     { label: 'Daños',     x: 85,  y: 220, w: 70, h: 25 },
   }
 
   const getZoneStatus = (zone) => {
@@ -72,7 +71,6 @@ function CarDiagram({ sequences, photos, activeSeqId }) {
     const ph = photos[seq.id]
     if (seq.id === activeSeqId) return 'active'
     if (ph?.uploaded) return 'done'
-    // Check if this sequence is next (first not uploaded after active)
     const activeIdx = sequences.findIndex((s) => s.id === activeSeqId)
     const seqIdx = sequences.findIndex((s) => s.id === seq.id)
     if (seqIdx === activeIdx + 1) return 'next'
@@ -80,6 +78,7 @@ function CarDiagram({ sequences, photos, activeSeqId }) {
   }
 
   const getZoneHasDamage = (zone) => {
+    if (!showDamageIndicators) return false
     const seq = sequences.find((s) => s.diagramZone === zone)
     if (!seq) return false
     const ph = photos[seq.id]
@@ -89,36 +88,30 @@ function CarDiagram({ sequences, photos, activeSeqId }) {
     )
   }
 
+  // Brand colors: navy for done, green for active/next, slate for pending
   const STATUS_FILL = {
-    active: '#22c55e',
-    next: '#86efac',
-    done: '#3b82f6',
-    pending: '#e2e8f0',
+    active: '#16a34a',   // green-700 — next to capture
+    next:   '#86efac',   // green-300 — upcoming
+    done:   '#0F1A5A',   // brand navy — completed
+    pending:'#e2e8f0',   // slate-200
     hidden: 'transparent',
   }
   const STATUS_STROKE = {
-    active: '#16a34a',
-    next: '#4ade80',
-    done: '#2563eb',
-    pending: '#cbd5e1',
+    active: '#15803d',
+    next:   '#4ade80',
+    done:   '#162A7F',
+    pending:'#cbd5e1',
     hidden: 'none',
   }
 
   return (
-    <svg
-      viewBox="0 0 240 430"
-      className="w-full max-w-[180px] mx-auto drop-shadow-sm"
-      aria-label="Plano digital del vehículo"
-    >
-      {/* Car body silhouette */}
-      <rect x="55" y="55" width="130" height="310" rx="28" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="2" />
+    <svg viewBox="0 0 240 430" className="w-full max-w-[180px] mx-auto drop-shadow-sm" aria-label="Plano digital del vehículo">
+      <rect x="55" y="55" width="130" height="310" rx="28" fill="#f1f5f9" stroke="#c8ccdb" strokeWidth="2" />
       <rect x="70" y="130" width="100" height="140" rx="8" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1" />
-      {/* Wheels */}
       <ellipse cx="60" cy="110" rx="16" ry="22" fill="#334155" />
       <ellipse cx="180" cy="110" rx="16" ry="22" fill="#334155" />
       <ellipse cx="60" cy="320" rx="16" ry="22" fill="#334155" />
       <ellipse cx="180" cy="320" rx="16" ry="22" fill="#334155" />
-      {/* Zone overlays */}
       {Object.entries(zones).map(([zone, z]) => {
         const status = getZoneStatus(zone)
         const hasDamage = getZoneHasDamage(zone)
@@ -126,35 +119,21 @@ function CarDiagram({ sequences, photos, activeSeqId }) {
         return (
           <g key={zone}>
             <rect
-              x={z.x} y={z.y} width={z.w} height={z.h}
-              rx="6"
+              x={z.x} y={z.y} width={z.w} height={z.h} rx="6"
               fill={STATUS_FILL[status]}
               stroke={hasDamage ? '#f59e0b' : STATUS_STROKE[status]}
               strokeWidth={status === 'active' ? 2.5 : 1.5}
-              opacity={status === 'pending' ? 0.5 : 0.8}
+              opacity={status === 'pending' ? 0.5 : 0.85}
             />
             {status === 'done' && (
-              <text
-                x={z.x + z.w / 2} y={z.y + z.h / 2 + 5}
-                textAnchor="middle" fill="white" fontSize="12" fontWeight="700"
-              >
-                ✓
-              </text>
+              <text x={z.x + z.w / 2} y={z.y + z.h / 2 + 5} textAnchor="middle" fill="white" fontSize="12" fontWeight="700">✓</text>
             )}
             {status === 'active' && (
               <>
-                <rect
-                  x={z.x} y={z.y} width={z.w} height={z.h} rx="6"
-                  fill="none" stroke="#16a34a" strokeWidth="3" opacity="0.6"
-                >
+                <rect x={z.x} y={z.y} width={z.w} height={z.h} rx="6" fill="none" stroke="#16a34a" strokeWidth="3" opacity="0.6">
                   <animate attributeName="opacity" from="0.6" to="0" dur="1.2s" repeatCount="indefinite" />
                 </rect>
-                <text
-                  x={z.x + z.w / 2} y={z.y + z.h / 2 + 5}
-                  textAnchor="middle" fill="white" fontSize="9" fontWeight="700"
-                >
-                  {z.label}
-                </text>
+                <text x={z.x + z.w / 2} y={z.y + z.h / 2 + 5} textAnchor="middle" fill="white" fontSize="9" fontWeight="700">{z.label}</text>
               </>
             )}
             {hasDamage && status === 'done' && (
@@ -163,10 +142,7 @@ function CarDiagram({ sequences, photos, activeSeqId }) {
           </g>
         )
       })}
-      {/* Legend label */}
-      <text x="120" y="425" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="500">
-        Plano digital del vehículo
-      </text>
+      <text x="120" y="425" textAnchor="middle" fill="#7a7f95" fontSize="9" fontWeight="500">Plano digital del vehículo</text>
     </svg>
   )
 }
@@ -178,7 +154,6 @@ export default function Step3Photos({ state }) {
   const toast = useToast()
   const railRef = useRef(null)
 
-  // Filter sequences based on vehicle type
   const tipoVehiculo = vehiculo?.tipo || 'Particular'
   const visibleSequences = PHOTO_SEQUENCES.filter(
     (s) => !s.excludeVehicleTypes?.includes(tipoVehiculo),
@@ -189,7 +164,6 @@ export default function Step3Photos({ state }) {
   const photoState = photos[seq?.id] ?? { uploaded: false, analyzing: false, analyzed: false, piezas: {}, issues: [] }
   const completed = visibleSequences.filter((s) => photos[s.id]?.uploaded).length
 
-  // Auto-advance to first incomplete sequence
   useEffect(() => {
     const first = visibleSequences.find((s) => !photos[s.id]?.uploaded)
     if (first && !activeSeq) setActiveSeq(first.id)
@@ -205,7 +179,12 @@ export default function Step3Photos({ state }) {
 
   const handleCapture = () => {
     setPhoto(activeSeq, { analyzing: true, uploaded: true, thumbnail: SAMPLE_IMAGES[activeSeq] })
-    toast.info('Analizando imagen con IA…', { title: 'Validación IA' })
+
+    if (isPerito) {
+      toast.info('Analizando imagen con IA…', { title: 'Validación IA' })
+    } else {
+      toast.info('Procesando foto…', { title: 'Captura' })
+    }
 
     setTimeout(() => {
       const issues = []
@@ -216,31 +195,34 @@ export default function Step3Photos({ state }) {
         const detected = Math.random() > 0.2
         placa = detected ? vehiculo?.placa || 'XYZ-1234' : 'XYC-9999'
         placaMatch = placa === (vehiculo?.placa || 'XYZ-1234')
-        if (!placaMatch) {
+        if (isPerito && !placaMatch) {
           issues.push({ tone: 'warning', text: `Placa detectada (${placa}) no coincide con el carnet (${vehiculo?.placa || 'XYZ-1234'}).` })
         }
       }
 
-      // Simulate AI classifying pieces
+      // AI classifies pieces — results only shown to perito
       const aiPiezas = simulateAiClassification(seq.piezas)
-      const badCount = Object.values(aiPiezas).filter(
-        (p) => p.estado === ESTADO_PIEZA.REGULAR || p.estado === ESTADO_PIEZA.MALO,
-      ).length
+      if (isPerito) {
+        const badCount = Object.values(aiPiezas).filter(
+          (p) => p.estado === ESTADO_PIEZA.REGULAR || p.estado === ESTADO_PIEZA.MALO,
+        ).length
+        issues.unshift({
+          tone: badCount === 0 ? 'success' : 'warning',
+          text: `IA detectó ${seq.piezas.length} piezas. ${badCount} con observaciones.`,
+        })
+      }
 
-      issues.unshift({
-        tone: badCount === 0 ? 'success' : 'warning',
-        text: `IA detectó ${seq.piezas.length} piezas. ${badCount} con observaciones.`,
-      })
-
-      // Apply AI classifications to piece state
       seq.piezas.forEach((pieza) => {
-        if (aiPiezas[pieza]) {
-          setPiezaEstado(activeSeq, pieza, aiPiezas[pieza].estado)
-        }
+        if (aiPiezas[pieza]) setPiezaEstado(activeSeq, pieza, aiPiezas[pieza].estado)
       })
 
       setPhoto(activeSeq, { analyzing: false, analyzed: true, placa, placaMatch, issues })
-      toast.success('Imagen validada por IA', { title: 'Análisis completado' })
+
+      if (isPerito) {
+        toast.success('Imagen validada por IA', { title: 'Análisis completado' })
+      } else {
+        toast.success('¡Foto guardada correctamente!', { title: 'Captura exitosa' })
+      }
     }, 1800)
   }
 
@@ -259,7 +241,7 @@ export default function Step3Photos({ state }) {
         <div className="flex items-start gap-2 p-3 bg-warning-container/50 border border-warning/30 rounded-xl text-on-warning-container">
           <Icon name="info" className="text-[20px] mt-0.5 shrink-0" filled />
           <p className="text-caption sm:text-body-md leading-snug">
-            Para vehículos tipo <strong>{tipoVehiculo}</strong>, las secuencias fotográficas panorámicas frontales no aplican según los parámetros de inspección.
+            Para vehículos tipo <strong>{tipoVehiculo}</strong>, las secuencias fotográficas panorámicas frontales no aplican.
           </p>
         </div>
       )}
@@ -274,14 +256,14 @@ export default function Step3Photos({ state }) {
         </div>
         <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden mb-3">
           <div
-            className="h-full bg-gradient-accent rounded-full transition-all"
-            style={{ width: `${(completed / visibleSequences.length) * 100}%` }}
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${(completed / visibleSequences.length) * 100}%`,
+              background: 'linear-gradient(to right, #0F1A5A, #E84F51)',
+            }}
           />
         </div>
-        <div
-          ref={railRef}
-          className="flex gap-2 overflow-x-auto no-scrollbar -mx-3 px-3 pb-1 snap-x snap-mandatory"
-        >
+        <div ref={railRef} className="flex gap-2 overflow-x-auto no-scrollbar -mx-3 px-3 pb-1 snap-x snap-mandatory">
           {visibleSequences.map((s, i) => {
             const ph = photos[s.id]
             const active = activeSeq === s.id
@@ -296,9 +278,9 @@ export default function Step3Photos({ state }) {
                   active
                     ? 'bg-primary text-on-primary border-primary shadow-elev-primary'
                     : ph?.uploaded
-                    ? 'bg-blue-100 text-blue-800 border-blue-300'
+                    ? 'bg-brand-50 text-primary border-brand-200'
                     : isNext
-                    ? 'bg-green-100 text-green-800 border-green-400 animate-pulse'
+                    ? 'bg-green-50 text-green-800 border-green-400 animate-pulse'
                     : 'bg-white text-on-surface-variant border-outline-variant/60 hover:border-primary/40',
                 )}
               >
@@ -306,7 +288,7 @@ export default function Step3Photos({ state }) {
                   className={clsx(
                     'w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0',
                     active && 'bg-white/20 text-white',
-                    !active && ph?.uploaded && 'bg-blue-500 text-white',
+                    !active && ph?.uploaded && 'bg-primary text-white',
                     !active && isNext && 'bg-green-500 text-white',
                     !active && !ph?.uploaded && !isNext && 'bg-surface-container text-on-surface-variant',
                   )}
@@ -320,43 +302,50 @@ export default function Step3Photos({ state }) {
         </div>
       </div>
 
-      {/* Main content: diagram + capture side by side on desktop */}
+      {/* Main layout: diagram + capture */}
       <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4">
         {/* Vehicle diagram */}
         <div className="card p-3 sm:p-4 flex flex-col items-center">
-          <h4 className="text-label-md text-on-surface-variant text-center mb-2 font-semibold">Plano del vehículo</h4>
+          <h4 className="text-label-md text-on-surface-variant text-center mb-2 font-semibold uppercase tracking-wide text-[11px]">
+            Plano del vehículo
+          </h4>
           <CarDiagram
             sequences={visibleSequences}
             photos={photos}
             activeSeqId={activeSeq}
+            showDamageIndicators={isPerito}
           />
-          <div className="mt-3 w-full flex flex-col gap-1.5 text-caption">
+          <div className="mt-3 w-full flex flex-col gap-1.5 text-[11px]">
             <div className="flex items-center gap-2">
-              <span className="w-4 h-4 rounded bg-green-500 inline-block" />
+              <span className="w-4 h-3.5 rounded bg-green-600 inline-block shrink-0" />
               <span className="text-on-surface-variant">Capturando ahora</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-4 h-4 rounded bg-blue-500 inline-block" />
+              <span className="w-4 h-3.5 rounded bg-primary inline-block shrink-0" />
               <span className="text-on-surface-variant">Completada ✓</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-4 rounded bg-yellow-400 inline-block border border-yellow-500" />
-              <span className="text-on-surface-variant">Con observaciones IA</span>
-            </div>
+            {isPerito && (
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-3.5 rounded bg-warning inline-block shrink-0" />
+                <span className="text-on-surface-variant">Con observaciones IA</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Capture zone */}
         <div className="card p-3 sm:p-5 flex flex-col gap-3">
+          {/* Sequence header */}
           <div className="flex items-start sm:items-center gap-2 pb-3 border-b border-outline-variant/50">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary text-on-primary flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-elev-primary">
               <Icon name={seq.icon} className="text-[22px]" filled />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-headline-md text-on-surface truncate">{seq.nombre}</h3>
               <p className="text-caption text-on-surface-variant line-clamp-2">{seq.descripcion}</p>
             </div>
-            {photoState.uploaded && photoState.analyzed && (
+            {/* StatusChip only for perito */}
+            {isPerito && photoState.uploaded && photoState.analyzed && (
               <StatusChip
                 tone={photoState.placaMatch === false ? 'warning' : 'success'}
                 status={photoState.placaMatch === false ? 'Revisar' : 'Validada'}
@@ -375,44 +364,55 @@ export default function Step3Photos({ state }) {
           )}
 
           {/* Photo area */}
-          <div
-            className={clsx(
-              'relative rounded-xl overflow-hidden border-2 border-dashed transition-all aspect-[16/10] sm:aspect-[16/9]',
-              photoState.uploaded ? 'border-success/40' : 'border-outline-variant/70 hover:border-primary/60 hover:bg-primary-fixed/10',
-            )}
-          >
+          <div className={clsx(
+            'relative rounded-xl overflow-hidden border-2 border-dashed transition-all aspect-[16/10] sm:aspect-[16/9]',
+            photoState.uploaded ? 'border-success/40' : 'border-outline-variant/70 hover:border-primary/60',
+          )}>
             {photoState.uploaded ? (
               <>
                 <img src={photoState.thumbnail} alt={seq.nombre} className="w-full h-full object-cover absolute inset-0" />
+
+                {/* Processing overlay — same visual for both roles */}
                 {photoState.analyzing && (
                   <>
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
                       <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/15 backdrop-blur flex items-center justify-center mb-2">
-                        <Icon name="auto_awesome" className="text-[28px] sm:text-[32px] animate-pulse" filled />
+                        <Icon name="photo_camera" className="text-[28px] sm:text-[32px] animate-pulse" filled />
                       </div>
-                      <p className="font-bold text-body-md sm:text-body-lg">Analizando con IA…</p>
-                      <p className="text-caption opacity-80 text-center px-4">Clasificando piezas de carrocería</p>
-                      <div className="absolute inset-x-0 top-0 h-1 bg-accent-500 animate-shimmer" />
+                      <p className="font-bold text-body-md sm:text-body-lg">Procesando…</p>
+                      <div className="absolute inset-x-0 top-0 h-1 animate-shimmer" style={{ background: '#E84F51' }} />
                     </div>
                   </>
                 )}
-                {photoState.analyzed && photoState.placa && (
-                  <div className="absolute top-2 left-2 px-2.5 py-1 bg-black/65 backdrop-blur text-white rounded-lg text-caption font-mono tracking-widest border border-accent-400/40">
+
+                {/* Placa overlay — ONLY for perito */}
+                {isPerito && photoState.analyzed && photoState.placa && (
+                  <div className="absolute top-2 left-2 px-2.5 py-1 bg-black/65 backdrop-blur text-white rounded-lg text-caption font-mono tracking-widest border border-white/20">
                     PLACA · {photoState.placa}
+                  </div>
+                )}
+
+                {/* Success badge for client (no AI text) */}
+                {!isPerito && photoState.analyzed && (
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-success text-on-success px-2.5 py-1 rounded-full text-caption font-bold shadow">
+                    <Icon name="check_circle" className="text-[14px]" filled />
+                    Guardada
                   </div>
                 )}
               </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
-                <img src={SAMPLE_IMAGES[seq.id]} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15" />
+                <img src={SAMPLE_IMAGES[seq.id]} alt="" className="absolute inset-0 w-full h-full object-cover opacity-10" />
                 <div className="relative z-10 flex flex-col items-center max-w-sm">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white shadow-elev-1 flex items-center justify-center mb-2">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white shadow-elev-2 flex items-center justify-center mb-2">
                     <Icon name="add_a_photo" className="text-[26px] sm:text-[28px] text-primary" filled />
                   </div>
-                  <h4 className="text-headline-md text-on-surface mb-1">Captura la foto</h4>
+                  <h4 className="text-headline-md text-on-surface mb-1">Tomar foto</h4>
                   <p className="text-caption sm:text-body-md text-on-surface-variant mb-3 max-w-xs">
-                    Foto al instante desde la cámara del dispositivo.
+                    {isPerito
+                      ? 'Foto al instante para análisis de IA y clasificación de piezas.'
+                      : 'Foto al instante. Sigue las instrucciones del recorrido guiado.'}
                   </p>
                   <button onClick={handleCapture} className="btn-primary">
                     <Icon name="photo_camera" /> Tomar foto
@@ -422,8 +422,8 @@ export default function Step3Photos({ state }) {
             )}
           </div>
 
-          {/* AI issues */}
-          {photoState.issues.length > 0 && photoState.analyzed && (
+          {/* AI issues — ONLY for perito */}
+          {isPerito && photoState.issues.length > 0 && photoState.analyzed && (
             <div className="flex flex-col gap-2 animate-fade-in">
               {photoState.issues.map((iss, i) => (
                 <div
@@ -446,16 +446,17 @@ export default function Step3Photos({ state }) {
           {photoState.uploaded && (
             <div className="grid grid-cols-2 sm:flex sm:gap-2 gap-2">
               <button
-                onClick={() =>
-                  setPhoto(activeSeq, { uploaded: false, analyzed: false, thumbnail: null, placa: null, placaMatch: null, issues: [] })
-                }
+                onClick={() => setPhoto(activeSeq, { uploaded: false, analyzed: false, thumbnail: null, placa: null, placaMatch: null, issues: [] })}
                 className="btn-soft sm:flex-1"
               >
                 <Icon name="refresh" /> Recapturar
               </button>
-              <button onClick={handleCapture} className="btn-ghost sm:flex-1">
-                <Icon name="auto_awesome" /> Re-analizar IA
-              </button>
+              {/* Re-analyze button only for perito */}
+              {isPerito && (
+                <button onClick={handleCapture} className="btn-ghost sm:flex-1">
+                  <Icon name="auto_awesome" /> Re-analizar IA
+                </button>
+              )}
             </div>
           )}
 
@@ -467,15 +468,16 @@ export default function Step3Photos({ state }) {
         </div>
       </div>
 
-      {/* Piece classification — only shown for PERITO role */}
-      {isPerito ? (
+      {/* ── PERITO ONLY: piece classification ─────────────────────────── */}
+      {isPerito && (
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-outline-variant/40">
             <div>
-              <h3 className="text-headline-md text-on-surface">Clasificación de piezas</h3>
-              <p className="text-caption text-on-surface-variant">
-                Estado de cada pieza detectada en la secuencia activa.
-              </p>
+              <h3 className="text-headline-md text-on-surface flex items-center gap-2">
+                <Icon name="admin_panel_settings" className="text-primary text-[20px]" filled />
+                Clasificación de piezas
+              </h3>
+              <p className="text-caption text-on-surface-variant">Estado de cada pieza detectada en esta secuencia.</p>
             </div>
             <div className="text-caption hidden sm:flex items-center gap-3 text-on-surface-variant">
               <span><strong className="text-success">B</strong> Bueno</span>
@@ -503,23 +505,17 @@ export default function Step3Photos({ state }) {
                   <div className="flex items-center gap-1 mb-2">
                     <p className="text-label-md text-on-surface truncate flex-1">{pieza}</p>
                     {isOpcional && (
-                      <span className="text-[10px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-full shrink-0">
-                        Opcional
-                      </span>
+                      <span className="text-[10px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-full shrink-0">Opcional</span>
                     )}
-                    {data.estado === ESTADO_PIEZA.REGULAR && (
-                      <span className="w-2 h-2 rounded-full bg-warning shrink-0" title="Regular" />
-                    )}
-                    {data.estado === ESTADO_PIEZA.MALO && (
-                      <span className="w-2 h-2 rounded-full bg-error shrink-0" title="Malo" />
-                    )}
+                    {data.estado === ESTADO_PIEZA.REGULAR && <span className="w-2 h-2 rounded-full bg-warning shrink-0" />}
+                    {data.estado === ESTADO_PIEZA.MALO && <span className="w-2 h-2 rounded-full bg-error shrink-0" />}
                   </div>
                   <div className="grid grid-cols-4 gap-1">
                     {[
-                      { v: ESTADO_PIEZA.BUENO, label: 'B', tone: 'success' },
-                      { v: ESTADO_PIEZA.REGULAR, label: 'R', tone: 'warning' },
-                      { v: ESTADO_PIEZA.MALO, label: 'M', tone: 'error' },
-                      { v: ESTADO_PIEZA.NO_EXISTE, label: 'N/E', tone: 'neutral' },
+                      { v: ESTADO_PIEZA.BUENO,    label: 'B',   tone: 'success' },
+                      { v: ESTADO_PIEZA.REGULAR,  label: 'R',   tone: 'warning' },
+                      { v: ESTADO_PIEZA.MALO,     label: 'M',   tone: 'error'   },
+                      { v: ESTADO_PIEZA.NO_EXISTE,label: 'N/E', tone: 'neutral' },
                     ].map(({ v, label, tone }) => {
                       const active = data.estado === v
                       return (
@@ -554,21 +550,6 @@ export default function Step3Photos({ state }) {
             })}
           </div>
         </div>
-      ) : (
-        /* For asegurado: just show progress confirmation, no piece details */
-        photoState.analyzed && (
-          <div className="card p-4 sm:p-5 flex items-start gap-3 bg-success-container/30 border border-success/30">
-            <div className="w-10 h-10 rounded-full bg-success text-on-success flex items-center justify-center shrink-0">
-              <Icon name="check_circle" className="text-[22px]" filled />
-            </div>
-            <div>
-              <p className="font-bold text-on-surface">Secuencia capturada correctamente</p>
-              <p className="text-caption text-on-surface-variant mt-0.5">
-                La imagen ha sido analizada. Continúa con la siguiente secuencia.
-              </p>
-            </div>
-          </div>
-        )
       )}
     </div>
   )

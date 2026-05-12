@@ -199,6 +199,31 @@ export default function InspectionWizardPage() {
         }
       />
 
+      {/* Brand role band */}
+      <div
+        className={clsx(
+          'rounded-xl px-4 py-3 mb-4 flex items-center gap-3',
+          isPerito
+            ? 'text-white'
+            : 'bg-brand-50 border border-brand-200',
+        )}
+        style={isPerito ? { background: 'linear-gradient(135deg, #091133 0%, #0F1A5A 70%, #162A7F 100%)' } : {}}
+      >
+        <div className={clsx('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', isPerito ? 'bg-white/15' : 'bg-primary text-on-primary')}>
+          <Icon name={isPerito ? 'admin_panel_settings' : 'person'} className="text-[20px]" filled />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={clsx('text-label-md font-bold truncate', isPerito ? 'text-white' : 'text-primary')}>
+            {isPerito ? 'Modo Perito — Acceso técnico completo' : 'Modo Cliente — Recorrido guiado de captura'}
+          </p>
+          <p className={clsx('text-caption truncate', isPerito ? 'opacity-70' : 'text-on-surface-variant')}>
+            {isPerito
+              ? 'Clasificación de piezas, análisis IA, diagnóstico y asegurabilidad habilitados.'
+              : 'Solo captura de fotografías. El análisis lo realizará un perito calificado.'}
+          </p>
+        </div>
+      </div>
+
       <div className="mb-4">
         <Stepper steps={STEPS} current={step} onStepClick={(i) => setStep(i)} />
       </div>

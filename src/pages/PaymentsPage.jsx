@@ -143,7 +143,7 @@ export default function PaymentsPage() {
       />
 
       <section className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-5 sm:mb-6">
-        <StatCard icon="payments" label="Movimientos" value={pagos.length} tone="primary" />
+        <StatCard icon="payments" label="Movimientos" value={pagos.length} tone="deep" />
         <StatCard icon="trending_up" label="Ingresos" value={`$${totalIn.toFixed(0)}`} tone="success" />
         <StatCard icon="trending_down" label="Egresos" value={`$${totalOut.toFixed(0)}`} tone="accent" />
       </section>

@@ -82,13 +82,13 @@ export default function InspectionsListPage() {
       />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
-        <StatCard icon="verified" label="Total" value={stats.total} tone="primary" />
-        <StatCard icon="autorenew" label="En progreso" value={stats.enProg} hint="captura activa" />
+        <StatCard icon="verified" label="Total" value={stats.total} tone="deep" />
+        <StatCard icon="autorenew" label="En progreso" value={stats.enProg} hint="captura activa" tone="primary" />
         <StatCard
           icon="rule"
           label="Por validar"
           value={stats.pend}
-          tone="accent"
+          tone="info"
           hint="esperando perito"
         />
         <StatCard

@@ -3,14 +3,12 @@ import Icon from './Icon'
 
 const TONES = {
   primary: 'bg-primary-fixed text-on-primary-fixed border border-primary/20',
-  accent: 'bg-secondary-fixed text-on-secondary-fixed-variant border border-accent-500/30',
-  success:
-    'bg-success-container text-on-success-container border border-success/20',
-  error: 'bg-error-container text-on-error-container border border-error/20',
-  warning:
-    'bg-warning-container text-on-warning-container border border-warning/20',
-  neutral:
-    'bg-surface-container-high text-on-surface-variant border border-outline-variant',
+  info:    'bg-info-container text-on-info-container border border-info/25',
+  accent:  'bg-secondary-fixed text-on-secondary-fixed-variant border border-accent-500/30',
+  success: 'bg-success-container text-on-success-container border border-success/20',
+  error:   'bg-error-container text-on-error-container border border-error/20',
+  warning: 'bg-warning-container text-on-warning-container border border-warning/20',
+  neutral: 'bg-surface-container-high text-on-surface-variant border border-outline-variant',
 }
 
 const STATUS_TONE_MAP = {

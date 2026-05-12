@@ -78,7 +78,7 @@ export default function ProfilePage() {
             </p>
             <div className="mt-3 flex justify-center">
               <StatusChip
-                tone="accent"
+                tone="success"
                 status="Cuenta verificada"
                 icon="verified"
                 size="sm"

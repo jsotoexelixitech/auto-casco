@@ -81,7 +81,7 @@ export default function DashboardPage() {
               label="Inspecciones"
               value={inspections.length}
               hint={`${inspectionsToValidate.length} requieren acción`}
-              tone="primary"
+              tone="deep"
               onClick={() => navigate('/inspecciones')}
             />
             <StatCard
@@ -90,6 +90,7 @@ export default function DashboardPage() {
               value={policies.filter((p) => p.estado === 'Activa').length}
               hint={`de ${policies.length} totales`}
               trend={{ dir: 'up', value: '+12%' }}
+              tone="primary"
               onClick={() => navigate('/polizas')}
             />
             <StatCard
@@ -97,7 +98,7 @@ export default function DashboardPage() {
               label="Vehículos"
               value={vehicles.length}
               hint="Asegurados"
-              tone="accent"
+              tone="info"
             />
             <StatCard
               icon="auto_awesome"
@@ -115,7 +116,7 @@ export default function DashboardPage() {
               label="Días Restantes"
               value={myPolicy?.diasRestantes ?? 0}
               hint={`de ${myPolicy?.diasContratados ?? 0}`}
-              tone="primary"
+              tone="deep"
               onClick={() => navigate('/cobertura')}
             />
             <StatCard
@@ -123,7 +124,7 @@ export default function DashboardPage() {
               label="Saldo"
               value={`$${(myPolicy?.saldo ?? 0).toFixed(2)}`}
               hint="Disponible"
-              tone="accent"
+              tone="success"
             />
             <StatCard
               icon="shield"
