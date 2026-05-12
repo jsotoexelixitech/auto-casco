@@ -44,6 +44,34 @@ export default function DashboardPage() {
         }
       />
 
+      {/* ── Welcome hero ─────────────────────────────────────────────────── */}
+      {!isPerito && myPolicy && (
+        <div className="rounded-2xl bg-gradient-brand text-on-primary p-4 sm:p-5 relative overflow-hidden mb-5 sm:mb-6">
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-accent-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] uppercase tracking-widest opacity-70 mb-0.5">
+                {new Date().toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+              <h2 className="text-headline-lg sm:text-display-sm font-bold leading-tight truncate">
+                {getGreeting()}, {user?.name?.split(' ')[0]}
+              </h2>
+              <p className="opacity-80 mt-1 text-caption sm:text-body-md">
+                Tu póliza <span className="font-mono font-bold">{myPolicy.numero}</span> está{' '}
+                <span className="font-bold">{myPolicy.estado?.toLowerCase()}</span>.{' '}
+                Te quedan <span className="font-bold">{myPolicy.diasRestantes} días</span> de cobertura.
+              </p>
+            </div>
+            <Link
+              to="/cobertura"
+              className="shrink-0 self-start sm:self-center bg-white/15 hover:bg-white/25 active:scale-95 transition rounded-xl px-5 py-2.5 font-bold text-label-md flex items-center gap-2 min-h-[44px]"
+            >
+              <Icon name="bolt" /> Comprar Días
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* KPI grid — 2 col on mobile, scales up */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
         {isPerito ? (
@@ -361,6 +389,13 @@ export default function DashboardPage() {
       )}
     </>
   )
+}
+
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Buenos días'
+  if (h < 18) return 'Buenas tardes'
+  return 'Buenas noches'
 }
 
 function BentoAction({ tone, icon, title, body, to }) {
