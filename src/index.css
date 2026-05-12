@@ -138,12 +138,15 @@ textarea {
   }
   .btn-primary {
     @apply btn text-on-primary shadow-elev-primary hover:shadow-elev-2 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-elev-primary;
-    background-image: linear-gradient(135deg, #162A7F 0%, #0F1A5A 100%);
+    /* Azul Pennsylvania oficial — sólido, sin gradient (alineado con Suscripcion-rcv) */
+    background-color: #0F1A5A;
+    background-image: none;
   }
   .btn-accent {
     @apply btn text-white shadow-elev-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed;
-    /* Rojo Imperial oficial (Manual de Identidad): #E84F51 → sombra #B23F44 */
-    background-image: linear-gradient(135deg, #E84F51 0%, #B23F44 100%);
+    /* Rojo Imperial oficial — sólido, sin gradient */
+    background-color: #E84F51;
+    background-image: none;
   }
   .btn-ghost {
     @apply btn border-2 border-primary text-primary bg-transparent hover:bg-primary/5 active:bg-primary/10;
@@ -201,9 +204,10 @@ textarea {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Brand "M" logo as inline SVG fallback (used when png is unavailable) */
+/* Brand "M" logo fallback — color sólido (Azul Pennsylvania) */
 .brand-m-gradient {
-  background-image: linear-gradient(135deg, #6371c2 0%, #162A7F 50%, #0F1A5A 100%);
+  background-color: #0F1A5A;
+  background-image: none;
 }
 
 /* ── Wordmark font (oficial: Constantia · sustituto: Source Serif 4) ───── */

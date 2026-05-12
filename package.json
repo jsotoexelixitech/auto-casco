@@ -11,7 +11,7 @@
     "start": "serve dist --single --listen 3000",
     "deploy": "npm run build && pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs",
     "tunnel": "cloudflared tunnel --url http://localhost:5173",
-    "dev:cloud": "concurrently -n \"vite,cloudflare\" -c \"blue,magenta\" \"npm run dev\" \"npm run tunnel\"",
+    "dev:cloud": "concurrently -n \"vite,cloudflare\" -c \"blue,magenta\" \"cross-env USE_TUNNEL=1 npm run dev\" \"npm run tunnel\"",
     "prod:cloud": "cloudflared tunnel --url http://localhost:3000"
   },
   "dependencies": {

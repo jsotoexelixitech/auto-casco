@@ -2,6 +2,7 @@ import { useState } from 'react'
 import clsx from 'clsx'
 import Icon from '../../components/ui/Icon'
 import { useToast } from '../../context/ToastContext'
+import { useAuth } from '../../context/AuthContext'
 
 const DAMAGE_TYPES = [
   { id: 'rayón', label: 'Rayón' },
@@ -18,9 +19,18 @@ const SEVERITY = [
 ]
 
 export default function Step4Damages({ state }) {
-  const { danios, setDanios, video360, setVideo360 } = state
+  const {
+    danios, setDanios,
+    video360, setVideo360,
+    descripcionDanios, setDescripcionDanios,
+    observacionesRiesgo, setObservacionesRiesgo,
+    iaDiagnostico, setIaDiagnostico,
+  } = state
+  const { user } = useAuth()
+  const isPerito = user?.role === 'perito' || user?.role === 'admin'
   const toast = useToast()
   const [showAdd, setShowAdd] = useState(false)
+  const [generatingIA, setGeneratingIA] = useState(false)
   const [draft, setDraft] = useState({
     tipo: 'rayón',
     severidad: 'leve',
@@ -43,6 +53,22 @@ export default function Step4Damages({ state }) {
   }
 
   const removeDamage = (id) => setDanios(danios.filter((d) => d.id !== id))
+
+  const generateIaDiagnostico = () => {
+    setGeneratingIA(true)
+    toast.info('Generando diagnóstico con IA…', { title: 'IA · Diagnóstico' })
+    setTimeout(() => {
+      const samples = [
+        `El vehículo presenta ${danios.length} daño(s) registrado(s). ${danios.filter((d) => d.severidad === 'grave').length} de gravedad severa. Se recomienda evaluación técnica antes de la emisión de póliza.`,
+        `Inspección completada. Se detectaron daños en: ${danios.map((d) => d.ubicacion).join(', ') || 'ninguna ubicación registrada'}. El vehículo requiere revisión de los componentes afectados.`,
+        `Estado general del vehículo: ${danios.length === 0 ? 'Óptimo, sin daños aparentes.' : `Daños presentes (${danios.length}). Riesgo ${danios.some((d) => d.severidad === 'grave') ? 'elevado' : 'moderado'} según evaluación IA.`}`,
+      ]
+      const diag = samples[Math.floor(Math.random() * samples.length)]
+      setIaDiagnostico(diag)
+      setGeneratingIA(false)
+      toast.success('Diagnóstico generado', { title: 'IA completado' })
+    }, 2000)
+  }
 
   const handleVideoUpload = () => {
     setVideo360({ ...video360, processing: true })
@@ -214,7 +240,7 @@ export default function Step4Damages({ state }) {
           <h3 className="text-headline-md text-on-surface mb-3">
             Mapa visual de daños
           </h3>
-          <div className="relative aspect-[2/1] rounded-xl bg-gradient-to-b from-primary-fixed/40 to-primary-fixed/10 border border-outline-variant/50 overflow-hidden">
+          <div className="relative aspect-[2/1] rounded-xl bg-primary-fixed/30 border border-outline-variant/50 overflow-hidden">
             <svg viewBox="0 0 600 300" className="w-full h-full">
               <g fill="#0F1A5A" opacity="0.18">
                 <rect x="120" y="60" width="360" height="180" rx="40" />
@@ -263,6 +289,72 @@ export default function Step4Damages({ state }) {
         </div>
       </div>
 
+      {/* Text fields for perito */}
+      <div className="card p-4 sm:p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-outline-variant/50">
+          <Icon name="description" className="text-primary text-[22px]" filled />
+          <h3 className="text-headline-md text-on-surface">Descripción y Observaciones</h3>
+        </div>
+
+        <div>
+          <label className="label flex items-center gap-1.5">
+            <Icon name="edit_note" className="text-[18px] text-on-surface-variant" />
+            Descripción de los Daños
+            {isPerito && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold ml-auto">Perito</span>}
+          </label>
+          <textarea
+            className="input min-h-[88px] resize-none"
+            placeholder={isPerito ? 'Describe detalladamente los daños observados en el vehículo…' : 'Será completado por el perito durante la validación.'}
+            value={descripcionDanios}
+            onChange={(e) => setDescripcionDanios(e.target.value)}
+            readOnly={!isPerito}
+          />
+        </div>
+
+        <div>
+          <label className="label flex items-center gap-1.5">
+            <Icon name="assignment" className="text-[18px] text-on-surface-variant" />
+            Observaciones y Opinión del Riesgo
+            {isPerito && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold ml-auto">Perito</span>}
+          </label>
+          <textarea
+            className="input min-h-[88px] resize-none"
+            placeholder={isPerito ? 'Opinión técnica del perito sobre el riesgo del vehículo…' : 'Será completado por el perito durante la validación.'}
+            value={observacionesRiesgo}
+            onChange={(e) => setObservacionesRiesgo(e.target.value)}
+            readOnly={!isPerito}
+          />
+        </div>
+
+        {/* AI Diagnosis */}
+        <div className="border border-outline-variant/40 rounded-xl p-3 bg-surface-container-low/60">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Icon name="auto_awesome" className="text-primary text-[20px]" filled />
+              <span className="text-label-md font-semibold text-on-surface">Diagnóstico IA</span>
+            </div>
+            <button
+              onClick={generateIaDiagnostico}
+              disabled={generatingIA}
+              className="btn-soft text-caption py-1.5 px-3 min-h-[36px]"
+            >
+              {generatingIA ? (
+                <><Icon name="progress_activity" className="animate-spin text-[16px]" /> Generando…</>
+              ) : (
+                <><Icon name="auto_awesome" className="text-[16px]" /> Generar diagnóstico</>
+              )}
+            </button>
+          </div>
+          {iaDiagnostico ? (
+            <p className="text-body-md text-on-surface leading-relaxed">{iaDiagnostico}</p>
+          ) : (
+            <p className="text-caption text-on-surface-variant italic">
+              Haz clic en "Generar diagnóstico" para que la IA analice los daños registrados y emita una opinión técnica automática.
+            </p>
+          )}
+        </div>
+      </div>
+
       <aside className="card p-4 sm:p-5 flex flex-col">
         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-outline-variant/50">
           <Icon name="360" className="text-primary text-[24px]" filled />
@@ -272,7 +364,7 @@ export default function Step4Damages({ state }) {
           Captura un video 360° del vehículo para complementar el reporte.
         </p>
 
-        <div className="relative aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-tertiary to-tertiary-container flex items-center justify-center text-on-tertiary">
+        <div className="relative aspect-video rounded-xl overflow-hidden bg-tertiary flex items-center justify-center text-on-tertiary">
           {video360.uploaded ? (
             <>
               <img

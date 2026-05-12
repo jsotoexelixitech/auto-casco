@@ -57,6 +57,9 @@ export function useInspectionState() {
   const [danios, setDanios] = useState([])
   const [video360, setVideo360] = useState({ uploaded: false, url: null, processing: false })
   const [tipoInspeccion, setTipoInspeccion] = useState('auto')
+  const [descripcionDanios, setDescripcionDanios] = useState('')
+  const [observacionesRiesgo, setObservacionesRiesgo] = useState('')
+  const [iaDiagnostico, setIaDiagnostico] = useState('')
 
   const setPhoto = useCallback((id, patch) => {
     setPhotos((prev) => ({
@@ -116,6 +119,12 @@ export function useInspectionState() {
     setDanios,
     video360,
     setVideo360,
+    descripcionDanios,
+    setDescripcionDanios,
+    observacionesRiesgo,
+    setObservacionesRiesgo,
+    iaDiagnostico,
+    setIaDiagnostico,
     reset,
   }
 }

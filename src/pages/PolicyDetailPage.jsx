@@ -172,7 +172,7 @@ export default function PolicyDetailPage() {
           </div>
           <div className="h-2.5 bg-white/15 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-accent-400 to-accent-600 rounded-full transition-all shadow-[0_0_8px_rgba(255,200,0,0.4)]"
+              className="h-full bg-accent rounded-full transition-all shadow-[0_0_8px_rgba(232,79,81,0.35)]"
               style={{ width: `${diasPct}%` }}
             />
           </div>

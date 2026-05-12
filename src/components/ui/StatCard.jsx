@@ -2,10 +2,11 @@ import clsx from 'clsx'
 import Icon from './Icon'
 
 const TONE_BG = {
-  primary: 'bg-gradient-brand-soft text-on-primary',
-  accent: 'bg-gradient-accent text-on-secondary-container',
-  success: 'bg-gradient-to-br from-success to-[#0a3d1c] text-on-success',
-  light: 'card text-on-surface',
+  // Colores sólidos del Manual de Identidad La Mundial (alineado con Suscripcion-rcv).
+  primary: 'bg-primary text-on-primary',
+  accent:  'bg-accent text-white',
+  success: 'bg-success text-on-success',
+  light:   'card text-on-surface',
 }
 
 export default function StatCard({

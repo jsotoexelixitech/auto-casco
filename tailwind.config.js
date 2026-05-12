@@ -229,22 +229,24 @@ export default {
         shimmer: 'shimmer 1.6s linear infinite',
         'gradient-shift': 'gradient-shift 8s ease infinite',
       },
+      // ────────────────────────────────────────────────────────────────────
+      // Identidad visual unificada con Suscripcion-rcv:
+      // Las clases `bg-gradient-*` se conservan para no romper código JSX,
+      // pero ahora rinden como COLORES SÓLIDOS del Manual de Identidad.
+      //   - Azul Pennsylvania  #0F1A5A   (brand-soft / brand-logo / brand-full / sunrise / mesh)
+      //   - Navy deep          #091133   (brand / brand-deep)
+      //   - Rojo Imperial      #E84F51   (accent / accent-bright)
+      // ────────────────────────────────────────────────────────────────────
       backgroundImage: {
-        // Existentes (no se tocan para no romper estilos ya aplicados)
-        'gradient-brand': 'linear-gradient(135deg, #162A7F 0%, #0F1A5A 50%, #091133 100%)',
-        'gradient-brand-soft': 'linear-gradient(135deg, #162A7F 0%, #0F1A5A 100%)',
-        // Rojo Imperial oficial (sin el shade claro coral): #E84F51 → #B23F44
-        'gradient-accent': 'linear-gradient(135deg, #E84F51 0%, #B23F44 100%)',
-        // Variante "luminosa" para usos puntuales (cards de bienvenida, etc.)
-        'gradient-accent-bright': 'linear-gradient(135deg, #FF6675 0%, #E84F51 60%, #B23F44 100%)',
-        'gradient-sunrise': 'linear-gradient(135deg, #E84F51 0%, #B23F44 35%, #162A7F 75%, #091133 100%)',
-        'gradient-mesh':
-          'radial-gradient(at 0% 0%, #162A7F 0%, transparent 50%), radial-gradient(at 100% 0%, #E84F51 0%, transparent 40%), radial-gradient(at 100% 100%, #0F1A5A 0%, transparent 60%), radial-gradient(at 0% 100%, #091133 0%, transparent 50%)',
-
-        // Nuevos (equivalentes a los de Suscripcion-rcv, reproducen el isotipo "M")
-        'gradient-brand-deep': 'linear-gradient(180deg, #091133 0%, #0F1A5A 100%)',
-        'gradient-brand-logo': 'linear-gradient(135deg, #091133 0%, #0F1A5A 45%, #2E6DBF 100%)',
-        'gradient-brand-full': 'linear-gradient(135deg, #0F1A5A 0%, #2E6DBF 55%, #E84F51 100%)',
+        'gradient-brand':         'linear-gradient(0deg, #091133, #091133)',
+        'gradient-brand-deep':    'linear-gradient(0deg, #091133, #091133)',
+        'gradient-brand-soft':    'linear-gradient(0deg, #0F1A5A, #0F1A5A)',
+        'gradient-brand-logo':    'linear-gradient(0deg, #0F1A5A, #0F1A5A)',
+        'gradient-brand-full':    'linear-gradient(0deg, #0F1A5A, #0F1A5A)',
+        'gradient-accent':        'linear-gradient(0deg, #E84F51, #E84F51)',
+        'gradient-accent-bright': 'linear-gradient(0deg, #E84F51, #E84F51)',
+        'gradient-sunrise':       'linear-gradient(0deg, #0F1A5A, #0F1A5A)',
+        'gradient-mesh':          'linear-gradient(0deg, #0F1A5A, #0F1A5A)',
       },
     },
   },

@@ -4,6 +4,7 @@ import StatusChip from '../../components/ui/StatusChip'
 import {
   ESTADO_PIEZA,
   PHOTO_SEQUENCES,
+  calcularAsegurabilidad,
 } from '../../data/mockData'
 import { useAuth } from '../../context/AuthContext'
 
@@ -17,6 +18,9 @@ export default function Step5Review({ state, inspectionNumber }) {
     danios,
     video360,
     tipoInspeccion,
+    descripcionDanios,
+    observacionesRiesgo,
+    iaDiagnostico,
   } = state
   const { user } = useAuth()
   const isPerito = user?.role === 'perito' || user?.role === 'admin'
@@ -24,8 +28,8 @@ export default function Step5Review({ state, inspectionNumber }) {
   const totals = PHOTO_SEQUENCES.reduce(
     (acc, s) => {
       const ph = photos[s.id]
-      if (ph.uploaded) acc.uploaded++
-      Object.values(ph.piezas).forEach((p) => {
+      if (ph?.uploaded) acc.uploaded++
+      Object.values(ph?.piezas ?? {}).forEach((p) => {
         acc.piezas++
         if (p.estado === ESTADO_PIEZA.MALO) acc.malos++
         else if (p.estado === ESTADO_PIEZA.REGULAR) acc.regulares++
@@ -36,9 +40,58 @@ export default function Step5Review({ state, inspectionNumber }) {
     { uploaded: 0, piezas: 0, malos: 0, regulares: 0, faltantes: 0 },
   )
 
+  const asegurabilidad = calcularAsegurabilidad(photos)
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2 flex flex-col gap-4">
+        {/* Asegurabilidad verdict */}
+        <div
+          className={clsx(
+            'rounded-2xl p-4 sm:p-5 flex items-start gap-3 border-2',
+            asegurabilidad.asegurable
+              ? 'bg-success-container/40 border-success/50 text-on-success-container'
+              : 'bg-error-container/40 border-error/50 text-on-error-container',
+          )}
+        >
+          <div
+            className={clsx(
+              'w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
+              asegurabilidad.asegurable ? 'bg-success text-on-success' : 'bg-error text-on-error',
+            )}
+          >
+            <Icon
+              name={asegurabilidad.asegurable ? 'verified' : 'gpp_bad'}
+              className="text-[26px]"
+              filled
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-caption uppercase tracking-widest font-bold opacity-70 mb-0.5">
+              Resultado de Asegurabilidad
+            </p>
+            <h3 className="text-headline-lg font-bold leading-tight">
+              {asegurabilidad.asegurable ? 'VEHÍCULO ASEGURABLE' : 'VEHÍCULO NO ASEGURABLE'}
+            </h3>
+            <p className="text-body-md mt-1 opacity-90">
+              {asegurabilidad.asegurable
+                ? `El vehículo cumple los criterios de asegurabilidad. Piezas R: ${asegurabilidad.totalR} · M: ${asegurabilidad.totalM}`
+                : `El vehículo supera el límite permitido. Piezas R: ${asegurabilidad.totalR} · M: ${asegurabilidad.totalM} · Total R+M: ${asegurabilidad.totalRM} (máx. 14)`}
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <span className={clsx('px-2.5 py-1 rounded-full text-caption font-bold border', asegurabilidad.asegurable ? 'bg-success/20 border-success/40' : 'bg-error/20 border-error/40')}>
+                {asegurabilidad.totalR} Regulares
+              </span>
+              <span className={clsx('px-2.5 py-1 rounded-full text-caption font-bold border', asegurabilidad.totalM > 0 ? 'bg-error/20 border-error/40' : 'bg-success/10 border-success/30')}>
+                {asegurabilidad.totalM} Malos
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-caption font-bold border bg-surface-container/50 border-outline-variant/50 text-on-surface">
+                {totals.piezas} Total piezas
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Hero summary */}
         <div className="card-elev2 p-4 sm:p-5 overflow-hidden relative bg-gradient-brand-soft text-on-primary">
           <div className="absolute -top-10 -right-10 w-48 h-48 bg-accent-500/30 rounded-full blur-3xl" />
@@ -145,6 +198,36 @@ export default function Step5Review({ state, inspectionNumber }) {
             })}
           </div>
         </div>
+
+        {/* Descripción / Observaciones / Diagnóstico IA */}
+        {(descripcionDanios || observacionesRiesgo || iaDiagnostico) && (
+          <div className="card p-4 sm:p-5 flex flex-col gap-4">
+            <h3 className="text-headline-md text-on-surface flex items-center gap-2">
+              <Icon name="description" className="text-primary" filled /> Descripción y Observaciones
+            </h3>
+            {descripcionDanios && (
+              <div>
+                <p className="text-label-md text-on-surface-variant uppercase tracking-wide text-[10px] mb-1">Descripción de los Daños</p>
+                <p className="text-body-md text-on-surface leading-relaxed bg-surface-container/50 rounded-lg p-3 border border-outline-variant/40">{descripcionDanios}</p>
+              </div>
+            )}
+            {observacionesRiesgo && (
+              <div>
+                <p className="text-label-md text-on-surface-variant uppercase tracking-wide text-[10px] mb-1">Observaciones y Opinión del Riesgo</p>
+                <p className="text-body-md text-on-surface leading-relaxed bg-surface-container/50 rounded-lg p-3 border border-outline-variant/40">{observacionesRiesgo}</p>
+              </div>
+            )}
+            {iaDiagnostico && (
+              <div className="flex items-start gap-2 p-3 bg-primary-fixed/20 border border-primary/20 rounded-xl">
+                <Icon name="auto_awesome" className="text-primary text-[20px] mt-0.5 shrink-0" filled />
+                <div>
+                  <p className="text-label-md font-semibold text-primary mb-1">Diagnóstico IA</p>
+                  <p className="text-body-md text-on-surface">{iaDiagnostico}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {isPerito && (
           <div className="card p-4 sm:p-5 border-2 border-error/20 bg-error-container/10">

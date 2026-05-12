@@ -180,7 +180,7 @@ export default function DashboardPage() {
               <p className="text-body-md text-on-surface-variant truncate">
                 {myVehicle?.version} · {myVehicle?.color}
               </p>
-              <div className="bg-gradient-to-br from-surface-container to-surface-container-low rounded-xl p-3 sm:p-4 mt-3 border border-outline-variant/40">
+              <div className="bg-surface-container-low rounded-xl p-3 sm:p-4 mt-3 border border-outline-variant/40">
                 <p className="text-caption text-on-surface-variant uppercase tracking-wider mb-0.5">
                   Días restantes
                 </p>
@@ -251,7 +251,7 @@ export default function DashboardPage() {
             </div>
             <div className="w-full bg-surface-container h-2.5 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-accent-500 transition-all"
+                className="h-full rounded-full bg-primary transition-all"
                 style={{ width: '40%' }}
               />
             </div>

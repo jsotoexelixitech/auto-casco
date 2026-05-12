@@ -35,7 +35,7 @@ export default function Step2Location({ state }) {
           del proceso.
         </p>
 
-        <div className="relative aspect-[16/10] sm:aspect-[16/9] rounded-xl overflow-hidden bg-gradient-to-br from-primary-fixed via-tertiary-fixed-dim to-primary-fixed-dim border border-outline-variant/40">
+        <div className="relative aspect-[16/10] sm:aspect-[16/9] rounded-xl overflow-hidden bg-primary-fixed-dim border border-outline-variant/40">
           <svg viewBox="0 0 800 450" className="absolute inset-0 w-full h-full opacity-40">
             <defs>
               <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">

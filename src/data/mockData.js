@@ -289,36 +289,59 @@ export const INSPECTIONS = [
   },
 ]
 
-// 12 photo sequences from the requirements
+// Photo sequences per meeting minutes (2026-05-05)
+// excludeVehicleTypes: sequences excluded for certain vehicle types
 export const PHOTO_SEQUENCES = [
   {
     id: 'seq-frontal-placa',
     nombre: 'Frontal con Placa',
-    descripcion:
-      'Panorámica de frente donde se visualice la placa delantera.',
+    descripcion: 'Secuencia panorámica de frente donde se visualice la placa delantera.',
     icon: 'directions_car',
     requierePlaca: true,
-    piezas: ['Placa Delantera', 'Parachoques Del.', 'Capot', 'Faros Del.'],
+    excludeVehicleTypes: ['Moto', 'Remolque'],
+    diagramZone: 'front',
+    piezas: [
+      'Capot',
+      'Cocuyo Guard. Der',
+      'Cocuyo Guard. Izq',
+      'Parabrisas Del.',
+      'Parach. Delant.',
+      'Faro Derecho',
+      'Faro Izquierdo',
+      'Cocuyo Derec.',
+      'Cocuyo Izquierd.',
+      'Cocuyo Neblina D',
+      'Cocuyo Neblina I',
+      'Parrilla Central',
+    ],
+    piezasOpcionales: ['Mataburro'],
   },
   {
     id: 'seq-frontal-lat-der',
     nombre: 'Frontal + Lateral Derecho',
-    descripcion: 'Área delantera con el lateral derecho.',
+    descripcion: 'Secuencia panorámica del área delantera con el lateral derecho.',
     icon: 'turn_right',
+    excludeVehicleTypes: ['Moto', 'Remolque'],
+    diagramZone: 'front-right',
     piezas: [
-      'Capot',
-      'Parabrisas Del.',
-      'Faro Del. Der.',
-      'Espejo Der.',
-      'Puerta Del. Der.',
+      'Cocuyo Guard. Der',
+      'Estribo Derecho',
+      'Guardaf. D. Der',
+      'Retrovisor Der',
+      'Puerta D. Derecha',
+      'Platina Pta. D.D.',
+      'Tapicer. Pta. D.D.',
+      'Vidrio Pta. D.D.',
     ],
+    piezasOpcionales: ['Estribo Posapie Der'],
   },
   {
     id: 'seq-trasera-placa',
     nombre: 'Trasera con Placa',
-    descripcion: 'Área trasera donde se visualice la placa.',
+    descripcion: 'Área trasera donde se visualice la placa trasera.',
     icon: 'directions_car',
     requierePlaca: true,
+    diagramZone: 'rear',
     piezas: ['Placa Trasera', 'Parachoques Tras.', 'Maletero', 'Faros Tras.'],
   },
   {
@@ -326,6 +349,7 @@ export const PHOTO_SEQUENCES = [
     nombre: 'Trasera + Lateral Derecho',
     descripcion: 'Área trasera con el lateral derecho.',
     icon: 'turn_right',
+    diagramZone: 'rear-right',
     piezas: ['Maletero', 'Faro Tras. Der.', 'Puerta Tras. Der.', 'Aro Tras. Der.'],
   },
   {
@@ -333,6 +357,7 @@ export const PHOTO_SEQUENCES = [
     nombre: 'Frontal + Lateral Izquierdo',
     descripcion: 'Área delantera con el lateral izquierdo.',
     icon: 'turn_left',
+    diagramZone: 'front-left',
     piezas: [
       'Capot',
       'Parabrisas Del.',
@@ -346,6 +371,7 @@ export const PHOTO_SEQUENCES = [
     nombre: 'Trasera + Lateral Izquierdo',
     descripcion: 'Área trasera con el lateral izquierdo.',
     icon: 'turn_left',
+    diagramZone: 'rear-left',
     piezas: [
       'Maletero',
       'Faro Tras. Izq.',
@@ -355,16 +381,18 @@ export const PHOTO_SEQUENCES = [
   },
   {
     id: 'seq-serial',
-    nombre: 'Seriales',
-    descripcion: 'Serial de identificación (Body) y serial troquelado.',
+    nombre: 'Impronta / Serial',
+    descripcion: 'Foto de la impronta (serial de carrocería) y serial troquelado.',
     icon: 'qr_code_2',
-    piezas: ['Serial Body', 'Serial Troquelado'],
+    diagramZone: 'serial',
+    piezas: ['Serial Body (Impronta)', 'Serial Troquelado'],
   },
   {
     id: 'seq-seguridad',
     nombre: 'Sistemas de Seguridad',
-    descripcion: 'Captura de los sistemas de seguridad del vehículo.',
+    descripcion: 'Alarma, cinturones de seguridad y bolsas de aire.',
     icon: 'shield',
+    diagramZone: 'interior',
     piezas: ['Alarma', 'Cinturones', 'Airbags'],
   },
   {
@@ -372,6 +400,7 @@ export const PHOTO_SEQUENCES = [
     nombre: 'Check Panel',
     descripcion: 'Tablero indicando el kilometraje de recorrido.',
     icon: 'speed',
+    diagramZone: 'dashboard',
     piezas: ['Tablero / Odómetro'],
   },
   {
@@ -379,23 +408,47 @@ export const PHOTO_SEQUENCES = [
     nombre: 'Tablero e Interior',
     descripcion: 'Tablero, asientos delanteros y traseros.',
     icon: 'event_seat',
+    diagramZone: 'interior',
     piezas: ['Tablero', 'Asientos Delanteros', 'Asientos Traseros'],
   },
   {
     id: 'seq-repuesto',
     nombre: 'Caucho de Repuesto',
-    descripcion: 'Caucho y rin de repuesto, gato, llave, triángulo.',
+    descripcion: 'Caucho y rin de repuesto, gato, llave de gato y triángulo.',
     icon: 'build_circle',
+    diagramZone: 'trunk',
     piezas: ['Caucho Repuesto', 'Gato', 'Llave de Gato', 'Triángulo'],
   },
   {
     id: 'seq-danios',
     nombre: 'Daños Iniciales',
-    descripcion: 'Señalamiento de daños presentados al momento de la inspección.',
+    descripcion: 'Señalamiento de daños visibles al momento de la inspección.',
     icon: 'report',
+    diagramZone: 'damages',
     piezas: ['Daños identificados'],
   },
 ]
+
+// Asegurabilidad rules per meeting minutes 2026-05-05:
+// - (R + M) >= 15 → NO ASEGURABLE
+// - R > 15 (solo regulares) → NO ASEGURABLE
+// - All B → ASEGURABLE
+// - R <= 15 and M == 0 → ASEGURABLE
+export function calcularAsegurabilidad(photos) {
+  let totalR = 0
+  let totalM = 0
+  PHOTO_SEQUENCES.forEach((s) => {
+    const ph = photos[s.id]
+    if (!ph) return
+    Object.values(ph.piezas).forEach((p) => {
+      if (p.estado === ESTADO_PIEZA.REGULAR) totalR++
+      if (p.estado === ESTADO_PIEZA.MALO) totalM++
+    })
+  })
+  const totalRM = totalR + totalM
+  const asegurable = totalRM < 15 && totalR <= 15
+  return { totalR, totalM, totalRM, asegurable }
+}
 
 export const ESTADO_PIEZA = {
   BUENO: 'B',
