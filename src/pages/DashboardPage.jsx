@@ -183,7 +183,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-row lg:flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col xs:flex-row lg:flex-col gap-3 sm:gap-4">
           <BentoAction
             tone="primary"
             icon="calendar_month"

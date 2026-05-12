@@ -6,13 +6,13 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 // ─── Roles ────────────────────────────────────────────────────────────────
-// SQLite no soporta enums nativos. Validamos en application layer.
-// Valores válidos: admin | perito | asegurado | intermediario
+// Valores válidos para `role`: admin | perito | asegurado | intermediario
+// (validación en application layer para mantener flexibilidad)
 
 model User {
   id           String   @id @default(cuid())

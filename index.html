@@ -2,10 +2,15 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <!-- Favicon → SVG (navegadores modernos) + PNG como fallback -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate icon" type="image/png" href="/logo-isotipo-transparente.png" />
-    <link rel="apple-touch-icon" href="/logo-isotipo-transparente.png" />
+    <!-- Favicons (isotipo oficial La Mundial, fondo transparente). v3 = cache-buster -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=3" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png?v=3" />
+    <link rel="shortcut icon" href="/favicon.ico?v=3" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
+    <link rel="manifest" href="/manifest.webmanifest?v=3" />
+    <meta name="apple-mobile-web-app-title" content="La Mundial" />
+    <meta name="application-name" content="La Mundial de Seguros" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />

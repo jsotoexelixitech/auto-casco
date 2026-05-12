@@ -48,15 +48,49 @@ export default {
           DEFAULT: '#ACACAC',
           50: '#fafafa',
           100: '#f5f5f5',
-          200: '#dddddd', // light shade
-          300: '#cccccc',
+          200: '#DDDDDD', // light shade (alineado con Suscripcion-rcv)
+          300: '#C5C5C5',
           400: '#ACACAC', // BRAND silver
           500: '#888888',
           600: '#777777', // dark shade
-          700: '#555555',
-          800: '#3a3a3a',
-          900: '#1f1f1f',
+          700: '#5A5A5A',
+          800: '#3F3F46',
+          900: '#1F1F23',
         },
+
+        // ────────────────────────────────────────────────────────────────
+        // Azules medios del isotipo La Mundial (stops del logo "M"):
+        //   blue-mid  · #2E6DBF
+        //   blue-light· #4A8DD5
+        // Estos azules vienen del Manual de Identidad y son los mismos
+        // usados en Suscripcion-rcv para los gradientes que reproducen el
+        // logo.
+        // ────────────────────────────────────────────────────────────────
+        blue: {
+          50:  '#EAF2FB',
+          100: '#CFE0F4',
+          200: '#A1C1E9',
+          300: '#71A2DC',
+          400: '#4A8DD5', // BRAND blue light (logo stop)
+          500: '#2E6DBF', // BRAND blue mid (logo stop)
+          600: '#1E51A0',
+          700: '#163E80',
+          800: '#112E60',
+          900: '#0C2245',
+          950: '#07172E',
+        },
+
+        // ── Aliases breves para componer gradientes / utilidades rápidas ──
+        'brand-navy':         '#0F1A5A',
+        'brand-navy-deep':    '#091133',
+        'brand-navy-soft':    '#162A7F',
+        'brand-blue-mid':     '#2E6DBF',
+        'brand-blue-light':   '#4A8DD5',
+        'brand-red':          '#E84F51',
+        'brand-red-deep':     '#B23F44',
+        'brand-red-light':    '#FF6675',
+        'brand-silver':       '#ACACAC',
+        'brand-silver-soft':  '#DDDDDD',
 
         // ── Aliases used widely across the app (mapped to brand) ──
         primary: '#0F1A5A',
@@ -83,27 +117,32 @@ export default {
         'tertiary-container': '#162A7F',
         'on-tertiary-container': '#bbc3e9',
 
-        error: '#dc2626',
+        // ── Colores semánticos alineados con Suscripcion-rcv ──
+        //   success (emerald): --color-emerald-success #10B981
+        //   warning (amber)  : --color-amber-warm      #F59E0B
+        //   error   (rose)   : --color-rose-error      #F43F5E
+        error: '#F43F5E',
         'on-error': '#ffffff',
-        'error-container': '#fee2e2',
-        'on-error-container': '#7f1d1d',
+        'error-container': '#FFE4E6',
+        'on-error-container': '#881337',
 
-        success: '#16a34a',
+        success: '#10B981',
         'on-success': '#ffffff',
-        'success-container': '#dcfce7',
-        'on-success-container': '#14532d',
+        'success-container': '#D1FAE5',
+        'on-success-container': '#064E3B',
 
-        warning: '#d97706',
+        warning: '#F59E0B',
         'on-warning': '#ffffff',
-        'warning-container': '#fef3c7',
-        'on-warning-container': '#78350f',
+        'warning-container': '#FEF3C7',
+        'on-warning-container': '#78350F',
 
-        background: '#f7f8fc',
-        'on-background': '#0c1226',
+        // Alineado con Suscripcion-rcv (`--color-page-bg`, `--color-text-primary`)
+        background: '#F4F6FB',
+        'on-background': '#091133',
 
-        surface: '#f7f8fc',
-        'on-surface': '#0c1226',
-        'on-surface-variant': '#4a4f63',
+        surface: '#F4F6FB',
+        'on-surface': '#091133',
+        'on-surface-variant': '#5A5A5A',
         'surface-variant': '#e7e9f2',
         'surface-dim': '#dadce6',
         'surface-bright': '#ffffff',
@@ -112,7 +151,7 @@ export default {
         'surface-container': '#e9ecf3',
         'surface-container-high': '#dee1ec',
         'surface-container-highest': '#d5d8e3',
-        'inverse-surface': '#1a1f33',
+        'inverse-surface': '#091133',
         'inverse-on-surface': '#eef0fa',
 
         outline: '#7a7f95',
@@ -120,8 +159,10 @@ export default {
       },
       fontFamily: {
         sans: ['Poppins', 'system-ui', '-apple-system', 'sans-serif'],
-        serif: ['"Playfair Display"', 'Constantia', 'Georgia', 'serif'],
-        wordmark: ['"Playfair Display"', 'Constantia', 'Georgia', 'serif'],
+        // Tipografía serif oficial La Mundial: Constantia → Source Serif 4
+        // (igual que Suscripcion-rcv).
+        serif: ['Constantia', '"Source Serif 4"', 'Georgia', 'serif'],
+        wordmark: ['Constantia', '"Source Serif 4"', 'Georgia', 'serif'],
       },
       // Fluid typography using clamp for perfect responsive sizing
       fontSize: {
@@ -189,12 +230,18 @@ export default {
         'gradient-shift': 'gradient-shift 8s ease infinite',
       },
       backgroundImage: {
+        // Existentes (no se tocan para no romper estilos ya aplicados)
         'gradient-brand': 'linear-gradient(135deg, #162A7F 0%, #0F1A5A 50%, #091133 100%)',
         'gradient-brand-soft': 'linear-gradient(135deg, #162A7F 0%, #0F1A5A 100%)',
         'gradient-accent': 'linear-gradient(135deg, #FF6675 0%, #E84F51 50%, #B23F44 100%)',
         'gradient-sunrise': 'linear-gradient(135deg, #FF6675 0%, #E84F51 35%, #162A7F 75%, #091133 100%)',
         'gradient-mesh':
           'radial-gradient(at 0% 0%, #162A7F 0%, transparent 50%), radial-gradient(at 100% 0%, #E84F51 0%, transparent 40%), radial-gradient(at 100% 100%, #0F1A5A 0%, transparent 60%), radial-gradient(at 0% 100%, #091133 0%, transparent 50%)',
+
+        // Nuevos (equivalentes a los de Suscripcion-rcv, reproducen el isotipo "M")
+        'gradient-brand-deep': 'linear-gradient(180deg, #091133 0%, #0F1A5A 100%)',
+        'gradient-brand-logo': 'linear-gradient(135deg, #091133 0%, #0F1A5A 45%, #2E6DBF 100%)',
+        'gradient-brand-full': 'linear-gradient(135deg, #0F1A5A 0%, #2E6DBF 55%, #E84F51 100%)',
       },
     },
   },

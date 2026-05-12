@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,700;1,400;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300..700,0..1,0&display=swap');
 
 @tailwind base;
@@ -29,8 +29,8 @@ body,
 
 body {
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-  background-color: #f7f8fc;
-  color: #0c1226;
+  background-color: #F4F6FB; /* alineado con Suscripcion-rcv */
+  color: #091133;            /* navy deep oficial */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'kern', 'liga', 'cv05';
@@ -97,9 +97,9 @@ textarea {
   font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Brand wordmark — Constantia substitute */
+/* Brand wordmark — Source Serif 4 (sustituto oficial de Constantia) */
 .wordmark {
-  font-family: 'Playfair Display', Constantia, Georgia, serif;
+  font-family: Constantia, 'Source Serif 4', Georgia, 'Times New Roman', serif;
   font-style: italic;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -167,7 +167,7 @@ textarea {
   }
 
   .skeleton {
-    background: linear-gradient(90deg, #eceef0 0%, #f7f8fc 50%, #eceef0 100%);
+    background: linear-gradient(90deg, #eceef0 0%, #F4F6FB 50%, #eceef0 100%);
     background-size: 200% 100%;
     @apply animate-shimmer rounded-lg;
   }
@@ -205,9 +205,9 @@ textarea {
   background-image: linear-gradient(135deg, #6371c2 0%, #162A7F 50%, #0F1A5A 100%);
 }
 
-/* ── Wordmark font ─────────────────────────────────────────────────────── */
+/* ── Wordmark font (oficial: Constantia · sustituto: Source Serif 4) ───── */
 .font-wordmark {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: Constantia, 'Source Serif 4', Georgia, 'Times New Roman', serif;
   font-weight: 700;
 }
 

@@ -27,13 +27,13 @@ export default function SideNav({ open, onClose }) {
     <>
       {open && (
         <div
-          className="md:hidden fixed inset-0 bg-brand-900/50 z-40 backdrop-blur-sm animate-fade-in"
+          className="md:hidden fixed inset-0 bg-brand-900/50 z-[55] backdrop-blur-sm animate-fade-in"
           onClick={onClose}
         />
       )}
       <aside
         className={clsx(
-          'fixed top-0 left-0 h-screen w-[78%] max-w-[300px] md:w-64 bg-white border-r border-outline-variant/60 flex flex-col z-50 transition-transform duration-300 ease-out',
+          'fixed top-0 left-0 h-screen w-[78%] max-w-[300px] md:w-64 bg-white border-r border-outline-variant/60 flex flex-col z-[60] md:z-50 transition-transform duration-300 ease-out',
           'md:translate-x-0',
           open ? 'translate-x-0 shadow-elev-2' : '-translate-x-full md:translate-x-0',
         )}

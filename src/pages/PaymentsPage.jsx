@@ -143,7 +143,7 @@ export default function PaymentsPage() {
         subtitle="Recarga tu saldo y revisa todo el historial de movimientos."
       />
 
-      <section className="grid grid-cols-3 gap-3 sm:gap-4 mb-5 sm:mb-6">
+      <section className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-5 sm:mb-6">
         <StatCard icon="payments" label="Movimientos" value={pagos.length} tone="primary" />
         <StatCard icon="trending_up" label="Ingresos" value={`$${totalIn.toFixed(0)}`} tone="success" />
         <StatCard icon="trending_down" label="Egresos" value={`$${totalOut.toFixed(0)}`} tone="accent" />
@@ -347,13 +347,13 @@ export default function PaymentsPage() {
           </>
         }
       >
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 mb-4">
           {METHOD_TYPES.map((t) => (
             <button
               key={t.v}
               onClick={() => setMethodDraft({ ...methodDraft, type: t.v })}
               className={clsx(
-                'p-3 min-h-[64px] rounded-xl border-2 transition flex flex-col items-center gap-1 active:scale-95',
+                'p-3 min-h-[56px] rounded-xl border-2 transition flex xs:flex-col items-center gap-2 xs:gap-1 active:scale-95',
                 methodDraft.type === t.v
                   ? 'border-primary bg-primary-fixed/40 ring-2 ring-primary/20 text-primary'
                   : 'border-outline-variant text-on-surface-variant hover:border-primary/40',

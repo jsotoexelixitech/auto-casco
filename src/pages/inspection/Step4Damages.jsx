@@ -238,10 +238,10 @@ export default function Step4Damages({ state }) {
                 const pos = positions[i % positions.length]
                 const color =
                   d.severidad === 'leve'
-                    ? '#16a34a'
+                    ? '#10B981'
                     : d.severidad === 'moderado'
-                    ? '#d97706'
-                    : '#dc2626'
+                    ? '#F59E0B'
+                    : '#F43F5E'
                 return (
                   <g key={d.id}>
                     <circle cx={pos.x} cy={pos.y} r="14" fill={color} opacity="0.9" />

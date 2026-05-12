@@ -408,7 +408,7 @@ function SiniestroDetailBody({ s, getVehicle }) {
             <Field label="Fecha" value={`${s.fecha}${s.hora ? ` · ${s.hora}` : ''}`} />
             <Field label="Severidad" value={s.severidad ?? '—'} capitalize />
             <Field label="Avance" value={`${s.avance}%`} />
-            <Field label="Lugar" value={s.lugar ?? '—'} className="col-span-2 sm:col-span-4" />
+            <Field label="Lugar" value={s.lugar ?? '—'} className="col-span-2 sm:col-span-4" multiline />
           </div>
           {s.descripcion && (
             <div className="mt-3">
@@ -515,7 +515,7 @@ function buildTimeline(s) {
   return base
 }
 
-function Field({ label, value, className = '', capitalize }) {
+function Field({ label, value, className = '', capitalize, multiline }) {
   return (
     <div className={`min-w-0 ${className}`}>
       <p className="text-caption text-on-surface-variant uppercase tracking-wider truncate">
@@ -523,7 +523,8 @@ function Field({ label, value, className = '', capitalize }) {
       </p>
       <p
         className={clsx(
-          'text-body-md text-on-surface font-semibold truncate',
+          'text-body-md text-on-surface font-semibold',
+          multiline ? 'break-words line-clamp-3' : 'truncate',
           capitalize && 'capitalize',
         )}
       >

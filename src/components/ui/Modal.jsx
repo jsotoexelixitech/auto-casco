@@ -46,7 +46,7 @@ export default function Modal({
       role="dialog"
       aria-modal="true"
       aria-label={typeof title === 'string' ? title : 'Diálogo'}
-      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+      className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
     >
       <div
         className="absolute inset-0 bg-brand-900/55 backdrop-blur-sm"
@@ -54,7 +54,7 @@ export default function Modal({
       />
       <div
         className={clsx(
-          'relative w-full bg-white rounded-t-2xl sm:rounded-2xl shadow-elev-2 border border-outline-variant/40 max-h-[92vh] flex flex-col animate-slide-up',
+          'relative w-full bg-white rounded-t-2xl sm:rounded-2xl shadow-elev-2 border border-outline-variant/40 flex flex-col animate-slide-up max-h-[92vh] sm:max-h-[min(92vh,calc(100dvh-2rem))]',
           sizes[size],
         )}
         style={{
@@ -91,7 +91,7 @@ export default function Modal({
             )}
           </header>
         )}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5">{children}</div>
         {footer && (
           <footer className="flex items-center justify-end gap-2 p-3 sm:p-4 border-t border-outline-variant/40 bg-surface-container-low/50 rounded-b-2xl">
             {footer}

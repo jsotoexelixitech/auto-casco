@@ -270,8 +270,8 @@ function Field({ label, value, mono, className }) {
 function Row({ label, value, bold }) {
   return (
     <div className="flex items-center justify-between border-b border-outline-variant/50 pb-2 last:border-0 gap-2">
-      <span className="text-on-surface-variant text-body-md">{label}</span>
-      <span className={`text-on-surface text-right ${bold ? 'font-bold text-body-lg' : 'text-label-md'}`}>
+      <span className="text-on-surface-variant text-body-md shrink-0">{label}</span>
+      <span className={`text-on-surface text-right min-w-0 truncate max-w-[60%] ${bold ? 'font-bold text-body-lg' : 'text-label-md'}`}>
         {value}
       </span>
     </div>

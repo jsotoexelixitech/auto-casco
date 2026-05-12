@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "User" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "legacyId" TEXT,
     "email" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
@@ -12,13 +12,15 @@ CREATE TABLE "User" (
     "phone" TEXT,
     "documento" TEXT,
     "active" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Vehicle" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "legacyId" TEXT,
     "placa" TEXT NOT NULL,
     "marca" TEXT NOT NULL,
@@ -30,50 +32,52 @@ CREATE TABLE "Vehicle" (
     "serial" TEXT,
     "image" TEXT,
     "ownerId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Vehicle_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Vehicle_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Plan" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "legacyId" TEXT,
     "nombre" TEXT NOT NULL,
     "descripcion" TEXT,
-    "precioDia" REAL NOT NULL,
+    "precioDia" DOUBLE PRECISION NOT NULL,
     "icon" TEXT,
     "features" TEXT NOT NULL,
     "recomendado" BOOLEAN NOT NULL DEFAULT false,
     "active" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Plan_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Policy" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "legacyId" TEXT,
     "numero" TEXT NOT NULL,
     "estado" TEXT NOT NULL DEFAULT 'Activa',
     "modalidad" TEXT NOT NULL DEFAULT 'dias',
     "diasContratados" INTEGER NOT NULL DEFAULT 0,
     "diasRestantes" INTEGER NOT NULL DEFAULT 0,
-    "saldoDisponible" REAL NOT NULL DEFAULT 0,
-    "fechaInicio" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "fechaFin" DATETIME,
+    "saldoDisponible" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "fechaInicio" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "fechaFin" TIMESTAMP(3),
     "vehicleId" TEXT NOT NULL,
     "holderId" TEXT NOT NULL,
     "planId" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Policy_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Policy_holderId_fkey" FOREIGN KEY ("holderId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Policy_planId_fkey" FOREIGN KEY ("planId") REFERENCES "Plan" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Policy_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Inspection" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "legacyId" TEXT,
     "numero" TEXT NOT NULL,
     "tipo" TEXT NOT NULL DEFAULT 'inicial',
@@ -81,37 +85,38 @@ CREATE TABLE "Inspection" (
     "vehicleId" TEXT NOT NULL,
     "peritoId" TEXT,
     "ubicacion" TEXT,
-    "latitude" REAL,
-    "longitude" REAL,
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
     "fotos" TEXT NOT NULL DEFAULT '[]',
     "danios" TEXT NOT NULL DEFAULT '[]',
     "video360Url" TEXT,
     "observaciones" TEXT,
-    "fechaCaptura" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "fechaAprobacion" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Inspection_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Inspection_peritoId_fkey" FOREIGN KEY ("peritoId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "fechaCaptura" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "fechaAprobacion" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Inspection_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Payment" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "legacyId" TEXT,
     "policyId" TEXT,
     "concepto" TEXT NOT NULL,
     "metodo" TEXT NOT NULL DEFAULT 'Saldo',
-    "monto" REAL NOT NULL,
+    "monto" DOUBLE PRECISION NOT NULL,
     "estado" TEXT NOT NULL DEFAULT 'Completado',
-    "fecha" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Payment_policyId_fkey" FOREIGN KEY ("policyId") REFERENCES "Policy" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Siniestro" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "legacyId" TEXT,
     "numero" TEXT NOT NULL,
     "policyId" TEXT NOT NULL,
@@ -120,11 +125,12 @@ CREATE TABLE "Siniestro" (
     "estado" TEXT NOT NULL DEFAULT 'Reportado',
     "descripcion" TEXT,
     "ubicacion" TEXT,
-    "fechaEvento" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "fechaEvento" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "timeline" TEXT NOT NULL DEFAULT '[]',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Siniestro_policyId_fkey" FOREIGN KEY ("policyId") REFERENCES "Policy" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Siniestro_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -207,3 +213,27 @@ CREATE INDEX "Siniestro_policyId_idx" ON "Siniestro"("policyId");
 
 -- CreateIndex
 CREATE INDEX "Siniestro_estado_idx" ON "Siniestro"("estado");
+
+-- AddForeignKey
+ALTER TABLE "Vehicle" ADD CONSTRAINT "Vehicle_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Policy" ADD CONSTRAINT "Policy_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Policy" ADD CONSTRAINT "Policy_holderId_fkey" FOREIGN KEY ("holderId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Policy" ADD CONSTRAINT "Policy_planId_fkey" FOREIGN KEY ("planId") REFERENCES "Plan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Inspection" ADD CONSTRAINT "Inspection_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Inspection" ADD CONSTRAINT "Inspection_peritoId_fkey" FOREIGN KEY ("peritoId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_policyId_fkey" FOREIGN KEY ("policyId") REFERENCES "Policy"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Siniestro" ADD CONSTRAINT "Siniestro_policyId_fkey" FOREIGN KEY ("policyId") REFERENCES "Policy"("id") ON DELETE CASCADE ON UPDATE CASCADE;

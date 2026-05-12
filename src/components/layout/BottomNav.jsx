@@ -30,10 +30,10 @@ export default function BottomNav() {
                 onClick={() => navigate('/inspecciones/nueva')}
                 className="relative flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-1 group"
               >
-                <span className="-mt-7 w-14 h-14 rounded-full bg-gradient-accent shadow-elev-accent flex items-center justify-center text-white border-4 border-white transition-transform group-active:scale-95">
-                  <Icon name="add_a_photo" className="text-[26px]" filled />
+                <span className="-mt-7 landscape:-mt-3 w-14 h-14 landscape:w-11 landscape:h-11 rounded-full bg-gradient-accent shadow-elev-accent flex items-center justify-center text-white border-4 border-white transition-transform group-active:scale-95">
+                  <Icon name="add_a_photo" className="text-[26px] landscape:text-[20px]" filled />
                 </span>
-                <span className="text-[10px] font-bold text-accent-500 mt-0.5">
+                <span className="text-[10px] font-bold text-accent-500 mt-0.5 landscape:hidden">
                   {item.label}
                 </span>
               </button>

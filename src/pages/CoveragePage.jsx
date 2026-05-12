@@ -164,7 +164,7 @@ export default function CoveragePage() {
                 type="number"
                 value={days}
                 onChange={(e) => setDays(Math.max(1, +e.target.value))}
-                className="input max-w-[160px]"
+                className="input w-full sm:max-w-[160px]"
                 min={1}
                 max={365}
               />
@@ -184,7 +184,7 @@ export default function CoveragePage() {
 
       {/* ── Sticky checkout bar ───────────────────────────────────────────── */}
       {/* Mobile: sits above BottomNav (72px+safe-area). md+: at true bottom, left offset for sidebar */}
-      <div className="fixed inset-x-0 z-40 md:left-64 checkout-sticky">
+      <div className="fixed inset-x-0 z-50 md:left-64 checkout-sticky">
         {/* Confirmation layer */}
         {confirmed && (
           <div className="bg-success text-on-success px-4 py-2 flex items-center justify-between gap-3 text-label-md">
@@ -207,7 +207,7 @@ export default function CoveragePage() {
 
         <div className="bg-white/95 backdrop-blur-xl border-t-2 border-primary/20 shadow-[0_-8px_32px_rgba(15,26,90,0.15)]">
           <div className="max-w-container mx-auto container-pad py-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
 
               {/* Plan pill */}
               <div className="hidden sm:flex items-center gap-2 shrink-0">
@@ -244,9 +244,9 @@ export default function CoveragePage() {
               <div className="flex-1" />
 
               {/* Total */}
-              <div className="shrink-0 text-right">
+              <div className="shrink-0 text-right min-w-0">
                 <p className="text-caption text-on-surface-variant leading-none">Total</p>
-                <p className="text-display-lg font-bold text-primary leading-none">${total}</p>
+                <p className="text-headline-lg sm:text-display-lg font-bold text-primary leading-none truncate">${total}</p>
               </div>
 
               {/* CTA */}
@@ -295,7 +295,7 @@ export default function CoveragePage() {
             </div>
 
             {/* Fine print */}
-            <p className="text-center text-[11px] text-on-surface-variant mt-1.5 leading-snug">
+            <p className="text-center text-[11px] text-on-surface-variant mt-1.5 leading-snug break-words">
               ${plan?.precioDia}/día × {days} {days === 1 ? 'día' : 'días'} · {plan?.nombre} ·{' '}
               {vehicle?.placa} · Al activar aceptas los{' '}
               <button className="underline hover:text-primary transition">

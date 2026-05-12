@@ -11,7 +11,7 @@ API REST para **Auto Casco · La Mundial de Seguros**. Construido con **NestJS 1
 | Runtime           | Node.js 20+                                     |
 | Framework         | NestJS 10 (TypeScript estricto)                 |
 | ORM               | Prisma 5                                        |
-| Base de datos     | SQLite (dev) · PostgreSQL (prod)                |
+| Base de datos     | **PostgreSQL 18** (dev y prod)                  |
 | Auth              | Passport JWT + bcrypt (12 rounds)               |
 | Validación        | class-validator + class-transformer             |
 | Docs API          | Swagger / OpenAPI 3                             |
@@ -21,12 +21,27 @@ API REST para **Auto Casco · La Mundial de Seguros**. Construido con **NestJS 1
 
 ## Quick start
 
+### 1. Crear la base de datos en PostgreSQL
+
+```sql
+-- Conectado como superuser (postgres)
+CREATE USER auto_casco_app WITH PASSWORD 'TU_PASSWORD_FUERTE' CREATEDB;
+CREATE DATABASE auto_casco OWNER auto_casco_app ENCODING 'UTF8';
+\c auto_casco
+GRANT ALL ON SCHEMA public TO auto_casco_app;
+```
+
+> **Las credenciales de tu instancia local están documentadas en `backend/CREDENTIALS.md`**
+> (archivo en `.gitignore`, no se sube al repo).
+
+### 2. Instalar y arrancar
+
 ```bash
 cd backend
 npm install
-cp .env.example .env          # ya viene un .env de dev incluido
+cp .env.example .env             # ajusta DATABASE_URL con tus credenciales
 npx prisma migrate dev --name init
-npm run seed                  # crea usuarios demo + planes + póliza
+npm run seed                     # crea usuarios demo + planes + póliza
 npm run start:dev
 ```
 
@@ -159,23 +174,16 @@ npm run db:reset        # reset total + reseed
 
 ---
 
-## Migración a PostgreSQL (producción)
+## Despliegue a producción
 
-1. Cambia `provider` en `prisma/schema.prisma`:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
-   ```
-2. Actualiza `DATABASE_URL` en `.env`:
-   ```
-   DATABASE_URL="postgresql://user:pass@host:5432/auto_casco"
-   ```
-3. Ejecuta:
+1. Provisiona PostgreSQL en tu hosting (RDS, Neon, Supabase, Railway, etc.)
+2. Actualiza `DATABASE_URL` en `.env` de producción
+3. **Rota `JWT_SECRET`** con un valor fuerte (`openssl rand -hex 64`)
+4. Ejecuta:
    ```bash
-   npx prisma migrate deploy
-   npm run seed
+   npm run build
+   npx prisma migrate deploy   # aplica migraciones existentes
+   npm run start:prod
    ```
 
 ---
