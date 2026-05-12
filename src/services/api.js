@@ -4,7 +4,7 @@
  * graceful fallback to mock data when the backend is unavailable.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api/v1'
 
 const TOKEN_KEY = 'ac_token'
 
@@ -33,11 +33,11 @@ export async function probeBackend() {
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 1500)
-    await fetch(`${BASE_URL.replace('/api', '')}/health`, {
+    const res = await fetch(`${BASE_URL}/health`, {
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
-    backendAvailable = true
+    backendAvailable = res.ok
   } catch {
     backendAvailable = false
   }
