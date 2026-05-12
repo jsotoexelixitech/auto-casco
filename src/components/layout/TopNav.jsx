@@ -111,7 +111,8 @@ export default function TopNav({ onMenuClick }) {
 
   return (
     <header
-      className="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-b border-outline-variant/60 shadow-sm"
+      className="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-b shadow-sm"
+      style={{ borderBottomColor: 'rgba(15, 26, 90, 0.10)' }}
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="flex items-center justify-between gap-2 container-pad h-14 sm:h-16 max-w-container mx-auto">

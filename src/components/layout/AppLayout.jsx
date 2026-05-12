@@ -14,7 +14,7 @@ export default function AppLayout() {
   }, [location.pathname])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <SideNav open={open} onClose={() => setOpen(false)} />
       <div className="md:ml-64 flex flex-col min-h-screen">
         <TopNav onMenuClick={() => setOpen((s) => !s)} />
