@@ -142,7 +142,8 @@ textarea {
   }
   .btn-accent {
     @apply btn text-white shadow-elev-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed;
-    background-image: linear-gradient(135deg, #FF6675 0%, #E84F51 50%, #B23F44 100%);
+    /* Rojo Imperial oficial (Manual de Identidad): #E84F51 → sombra #B23F44 */
+    background-image: linear-gradient(135deg, #E84F51 0%, #B23F44 100%);
   }
   .btn-ghost {
     @apply btn border-2 border-primary text-primary bg-transparent hover:bg-primary/5 active:bg-primary/10;

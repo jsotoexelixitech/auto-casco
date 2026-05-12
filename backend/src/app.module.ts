@@ -11,6 +11,9 @@ import { UsersModule } from './modules/users/users.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { PoliciesModule } from './modules/policies/policies.module';
 import { InspectionsModule } from './modules/inspections/inspections.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { SiniestrosModule } from './modules/siniestros/siniestros.module';
+import { PlansModule } from './modules/plans/plans.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -35,6 +38,9 @@ import { HealthModule } from './modules/health/health.module';
     VehiclesModule,
     PoliciesModule,
     InspectionsModule,
+    PaymentsModule,
+    SiniestrosModule,
+    PlansModule,
     HealthModule,
   ],
   providers: [

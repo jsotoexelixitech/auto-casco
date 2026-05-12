@@ -23,16 +23,20 @@ export default function LoginPage() {
     setEmail(users.find((u) => u.id === id)?.email)
   }
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setTimeout(() => {
-      const u = login(selected)
+    try {
+      const u = await login(email, password)
       toast.success(`Bienvenido, ${u.name.split(' ')[0]}`, {
         title: 'Sesión iniciada',
       })
       navigate('/dashboard')
-    }, 600)
+    } catch (err) {
+      toast.error(err?.message ?? 'Credenciales inválidas', { title: 'Error de acceso' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

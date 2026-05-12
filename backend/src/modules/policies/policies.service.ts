@@ -10,13 +10,14 @@ import { BuyDaysDto, CreatePolicyDto } from './dto/create-policy.dto';
 export class PoliciesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAllForUser(userId: string, role: string) {
+  async findAllForUser(userId: string, role: string) {
     const where = role === 'admin' || role === 'perito' ? {} : { holderId: userId };
-    return this.prisma.policy.findMany({
+    const list = await this.prisma.policy.findMany({
       where,
       include: { vehicle: true, plan: true },
       orderBy: { createdAt: 'desc' },
     });
+    return list.map((p) => this.parse(p));
   }
 
   async findOne(id: string, userId: string, role: string) {
@@ -28,7 +29,21 @@ export class PoliciesService {
     if (role !== 'admin' && role !== 'perito' && p.holderId !== userId) {
       throw new ForbiddenException();
     }
-    return p;
+    return this.parse(p);
+  }
+
+  private parse(p: any) {
+    return {
+      ...p,
+      coberturas: (() => {
+        try { return JSON.parse(p.coberturas ?? '[]'); } catch { return []; }
+      })(),
+      // Aliases for frontend compatibility
+      vigenciaDesde: p.fechaInicio?.toISOString?.().slice(0, 10) ?? '',
+      vigenciaHasta: p.fechaFin?.toISOString?.().slice(0, 10) ?? '',
+      plan: p.planNombre ?? p.plan?.nombre ?? 'Estándar',
+      saldo: p.saldoDisponible,
+    };
   }
 
   async create(dto: CreatePolicyDto, userId: string) {
@@ -40,16 +55,24 @@ export class PoliciesService {
     const count = await this.prisma.policy.count();
     const numero = `POL-${new Date().getFullYear()}-${String(count + 1).padStart(3, '0')}`;
 
+    const fechaFin = dto.diasContratados
+      ? new Date(Date.now() + dto.diasContratados * 86_400_000)
+      : null;
+
     return this.prisma.policy.create({
       data: {
         numero,
         modalidad: dto.modalidad,
+        planNombre: dto.planNombre ?? 'Estándar',
         diasContratados: dto.diasContratados ?? 0,
         diasRestantes: dto.diasContratados ?? 0,
         saldoDisponible: dto.saldoDisponible ?? 0,
+        prima: dto.prima ?? 0,
+        coberturas: JSON.stringify(dto.coberturas ?? []),
         vehicleId: dto.vehicleId,
         planId: dto.planId,
         holderId: userId,
+        fechaFin,
       },
       include: { vehicle: true, plan: true },
     });

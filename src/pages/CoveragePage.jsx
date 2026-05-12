@@ -270,7 +270,7 @@ export default function CoveragePage() {
                 )}
                 style={
                   !confirmed
-                    ? { backgroundImage: 'linear-gradient(135deg,#FF6675 0%,#E84F51 50%,#B23F44 100%)' }
+                    ? { backgroundImage: 'linear-gradient(135deg,#E84F51 0%,#B23F44 100%)' }
                     : {}
                 }
               >

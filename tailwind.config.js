@@ -233,8 +233,11 @@ export default {
         // Existentes (no se tocan para no romper estilos ya aplicados)
         'gradient-brand': 'linear-gradient(135deg, #162A7F 0%, #0F1A5A 50%, #091133 100%)',
         'gradient-brand-soft': 'linear-gradient(135deg, #162A7F 0%, #0F1A5A 100%)',
-        'gradient-accent': 'linear-gradient(135deg, #FF6675 0%, #E84F51 50%, #B23F44 100%)',
-        'gradient-sunrise': 'linear-gradient(135deg, #FF6675 0%, #E84F51 35%, #162A7F 75%, #091133 100%)',
+        // Rojo Imperial oficial (sin el shade claro coral): #E84F51 → #B23F44
+        'gradient-accent': 'linear-gradient(135deg, #E84F51 0%, #B23F44 100%)',
+        // Variante "luminosa" para usos puntuales (cards de bienvenida, etc.)
+        'gradient-accent-bright': 'linear-gradient(135deg, #FF6675 0%, #E84F51 60%, #B23F44 100%)',
+        'gradient-sunrise': 'linear-gradient(135deg, #E84F51 0%, #B23F44 35%, #162A7F 75%, #091133 100%)',
         'gradient-mesh':
           'radial-gradient(at 0% 0%, #162A7F 0%, transparent 50%), radial-gradient(at 100% 0%, #E84F51 0%, transparent 40%), radial-gradient(at 100% 100%, #0F1A5A 0%, transparent 60%), radial-gradient(at 0% 100%, #091133 0%, transparent 50%)',
 
