@@ -41,6 +41,10 @@ export function DataProvider({ children }) {
   const loadFromApi = useCallback(async () => {
     if (!getToken()) return          // Not logged in — use mock
 
+    // Skip API entirely if backend is known to be down
+    const backendUp = api.getBackendAvailability() ?? (await api.probeBackend())
+    if (!backendUp) return
+
     try {
       const [apiPolicies, apiSiniestros, apiPagos, apiMethods, apiPlans] =
         await Promise.allSettled([

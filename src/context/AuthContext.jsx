@@ -15,18 +15,21 @@ export function AuthProvider({ children }) {
     }
   })
 
-  // Restore session from JWT token on app reload
+  // Probe backend once at app start (silently) and restore JWT session if backend is up
   useEffect(() => {
-    const token = api.getToken()
-    if (token && !user) {
-      api.auth.me().then((u) => {
-        const mapped = mapApiUser(u)
-        setUser(mapped)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped))
-      }).catch(() => {
-        api.clearToken()
-      })
-    }
+    api.probeBackend().then((available) => {
+      if (!available) return // mock-only mode, nothing to restore
+      const token = api.getToken()
+      if (token && !user) {
+        api.auth.me().then((u) => {
+          const mapped = mapApiUser(u)
+          setUser(mapped)
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped))
+        }).catch(() => {
+          api.clearToken()
+        })
+      }
+    })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -40,8 +43,10 @@ export function AuthProvider({ children }) {
    * @param {string} [password]
    */
   const login = async (emailOrId, password) => {
-    // Try real backend first
-    if (password) {
+    // Try real backend only if it's available (cached probe)
+    const backendUp = api.getBackendAvailability() ?? (await api.probeBackend())
+
+    if (backendUp && password) {
       try {
         const res = await api.auth.login(emailOrId, password)
         api.setToken(res.accessToken)
@@ -49,10 +54,9 @@ export function AuthProvider({ children }) {
         setUser(mapped)
         return mapped
       } catch (err) {
-        // If it's a 401, re-throw so LoginPage can show the error
+        // If it's a 401/400 (real auth error), re-throw so LoginPage can show it
         if (err?.status === 401 || err?.status === 400) throw err
-        // Otherwise backend unavailable → fall through to mock
-        console.warn('[Auth] Backend unavailable, using mock login')
+        // Backend was up but call failed (network blip) → silent fallback to mock
       }
     }
 

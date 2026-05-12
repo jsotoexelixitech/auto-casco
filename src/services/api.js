@@ -13,17 +13,61 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const setToken = (t) => localStorage.setItem(TOKEN_KEY, t)
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
 
+/* ── Backend availability (cached for the session) ─────────────────────── */
+let backendAvailable = null
+
+export function getBackendAvailability() {
+  return backendAvailable
+}
+
+export function setBackendAvailability(v) {
+  backendAvailable = v
+}
+
+/**
+ * Probe backend once. Cached for the session.
+ * Uses /health endpoint with a 1.5s timeout.
+ */
+export async function probeBackend() {
+  if (backendAvailable !== null) return backendAvailable
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 1500)
+    await fetch(`${BASE_URL.replace('/api', '')}/health`, {
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    backendAvailable = true
+  } catch {
+    backendAvailable = false
+  }
+  return backendAvailable
+}
+
 /* ── Core request ──────────────────────────────────────────────────────── */
 async function request(method, path, body) {
+  // Short-circuit if backend is known to be down (avoids console errors)
+  if (backendAvailable === false) {
+    throw new ApiError(0, 'Backend unavailable')
+  }
+
   const token = getToken()
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  let res
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+  } catch (networkErr) {
+    // Network failure (offline, CORS, ERR_CONNECTION_REFUSED, etc.)
+    // Mark backend as unavailable so subsequent calls short-circuit cleanly.
+    backendAvailable = false
+    throw new ApiError(0, 'Backend unavailable')
+  }
 
   const json = await res.json().catch(() => ({}))
 
@@ -31,6 +75,9 @@ async function request(method, path, body) {
     const msg = json?.message ?? json?.error ?? `HTTP ${res.status}`
     throw new ApiError(res.status, Array.isArray(msg) ? msg.join('. ') : msg)
   }
+
+  // First successful response confirms the backend is up
+  if (backendAvailable !== true) backendAvailable = true
 
   // NestJS TransformInterceptor wraps data in { success, data, timestamp }
   return json?.data !== undefined ? json.data : json
@@ -107,14 +154,5 @@ export const plans = {
   list: () => get('/plans'),
 }
 
-/* ── Connectivity check ─────────────────────────────────────────────────── */
-export async function isBackendAvailable() {
-  try {
-    await fetch(`${BASE_URL.replace('/api', '')}/health`, {
-      signal: AbortSignal.timeout(2000),
-    })
-    return true
-  } catch {
-    return false
-  }
-}
+/* ── Connectivity check (legacy alias) ─────────────────────────────────── */
+export const isBackendAvailable = probeBackend
