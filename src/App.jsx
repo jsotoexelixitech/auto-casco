@@ -11,6 +11,8 @@ import InspectionWizardPage from './pages/InspectionWizardPage'
 import CoveragePage from './pages/CoveragePage'
 import EmissionPage from './pages/EmissionPage'
 import SiniestrosPage from './pages/SiniestrosPage'
+import SiniestroNuevoPage from './pages/SiniestroNuevoPage'
+import SiniestroDetailPage from './pages/SiniestroDetailPage'
 import PaymentsPage from './pages/PaymentsPage'
 import HelpPage from './pages/HelpPage'
 import ProfilePage from './pages/ProfilePage'
@@ -46,6 +48,8 @@ export default function App() {
         <Route path="/cobertura" element={<CoveragePage />} />
         <Route path="/emision" element={<EmissionPage />} />
         <Route path="/siniestros" element={<SiniestrosPage />} />
+        <Route path="/siniestros/nueva" element={<SiniestroNuevoPage />} />
+        <Route path="/siniestros/:id" element={<SiniestroDetailPage />} />
         <Route path="/pagos" element={<PaymentsPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
         <Route path="/configuracion" element={<SettingsPage />} />

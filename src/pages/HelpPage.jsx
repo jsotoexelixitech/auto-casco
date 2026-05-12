@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
-import Modal from '../components/ui/Modal'
 import { useToast } from '../context/ToastContext'
 
 const FAQS = [
@@ -20,7 +19,7 @@ const FAQS = [
   },
   {
     q: '¿Puedo usar mi seguro solo cuando lo necesito?',
-    a: 'Sí, con la modalidad “Cobertura por Días” pagas únicamente por los días que utilizas el vehículo. Activa cuando manejes y pausa cuando no.',
+    a: 'Sí, con la modalidad "Cobertura por Días" pagas únicamente por los días que utilizas el vehículo. Activa cuando manejes y pausa cuando no.',
   },
   {
     q: '¿Qué hago si la inspección es rechazada?',
@@ -56,21 +55,27 @@ const QUICK_ACTIONS = [
   },
 ]
 
+const QUICK_REPLIES = [
+  '¿Cómo activo mi cobertura?',
+  '¿Cómo reporto un siniestro?',
+  'Quiero cambiar mi plan',
+  'Tengo dudas con la inspección',
+]
+
 export default function HelpPage() {
-  const [open, setOpen] = useState(0)
-  const [chatOpen, setChatOpen] = useState(false)
-  const [videoOpen, setVideoOpen] = useState(false)
+  const [openFaq, setOpenFaq] = useState(0)
+  const [activeSection, setActiveSection] = useState(null) // 'chat' | 'video' | null
   const toast = useToast()
+  const sectionRef = useRef(null)
 
   const handleQuickAction = (id) => {
     if (id === 'phone') {
       window.location.href = 'tel:0800526864342'
       toast.info('Iniciando llamada a 0800-LAMUNDIAL', { title: 'Llamada' })
-    } else if (id === 'chat') {
-      setChatOpen(true)
-    } else if (id === 'video') {
-      setVideoOpen(true)
+      return
     }
+    setActiveSection((prev) => (prev === id ? null : id))
+    setTimeout(() => sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
   }
 
   return (
@@ -81,12 +86,16 @@ export default function HelpPage() {
         subtitle="Resolvemos tus dudas para que aproveches al máximo Auto Casco."
       />
 
+      {/* Quick action cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-5 sm:mb-6">
         {QUICK_ACTIONS.map((q) => (
           <button
             key={q.action}
             onClick={() => handleQuickAction(q.action)}
-            className="card p-4 sm:p-5 flex flex-col items-start hover:-translate-y-0.5 transition-all hover:shadow-elev-2 cursor-pointer min-w-0 text-left active:scale-[0.99] group"
+            className={clsx(
+              'card p-4 sm:p-5 flex flex-col items-start hover:-translate-y-0.5 transition-all hover:shadow-elev-2 cursor-pointer min-w-0 text-left active:scale-[0.99] group border-2',
+              activeSection === q.action ? 'border-primary bg-primary-fixed/10' : 'border-transparent',
+            )}
           >
             <div className="w-11 h-11 rounded-xl bg-gradient-brand-soft text-on-primary flex items-center justify-center mb-3 shadow-elev-primary group-hover:scale-110 transition">
               <Icon name={q.icon} className="text-[22px]" filled />
@@ -96,12 +105,72 @@ export default function HelpPage() {
               {q.body}
             </p>
             <span className="mt-auto inline-flex items-center gap-1 text-label-md text-primary font-bold group-hover:gap-2 transition-all">
-              {q.cta} <Icon name="arrow_forward" className="text-[16px]" />
+              {activeSection === q.action && q.action !== 'phone' ? 'Cerrar' : q.cta}{' '}
+              <Icon
+                name={activeSection === q.action && q.action !== 'phone' ? 'expand_less' : 'arrow_forward'}
+                className="text-[16px]"
+              />
             </span>
           </button>
         ))}
       </div>
 
+      {/* Inline chat / video sections */}
+      <div ref={sectionRef}>
+        {activeSection === 'chat' && (
+          <div className="card p-4 sm:p-5 mb-5 border-2 border-primary/30 animate-slide-up">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-brand-soft text-on-primary flex items-center justify-center shrink-0">
+                  <Icon name="forum" className="text-[20px]" filled />
+                </div>
+                <div>
+                  <h3 className="text-headline-md text-on-surface">Chat con La Mundial</h3>
+                  <p className="text-caption text-on-surface-variant">
+                    Atención inmediata · Respuesta promedio 2 min
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveSection(null)}
+                className="btn-icon shrink-0"
+                aria-label="Cerrar chat"
+              >
+                <Icon name="close" />
+              </button>
+            </div>
+            <ChatSection onClose={() => setActiveSection(null)} />
+          </div>
+        )}
+
+        {activeSection === 'video' && (
+          <div className="card p-4 sm:p-5 mb-5 border-2 border-primary/30 animate-slide-up">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-brand-soft text-on-primary flex items-center justify-center shrink-0">
+                  <Icon name="videocam" className="text-[20px]" filled />
+                </div>
+                <div>
+                  <h3 className="text-headline-md text-on-surface">Videollamada con perito</h3>
+                  <p className="text-caption text-on-surface-variant">
+                    Te conectamos con un experto en menos de 24h.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveSection(null)}
+                className="btn-icon shrink-0"
+                aria-label="Cerrar"
+              >
+                <Icon name="close" />
+              </button>
+            </div>
+            <VideoCallSection onClose={() => setActiveSection(null)} />
+          </div>
+        )}
+      </div>
+
+      {/* FAQs */}
       <div className="card p-4 sm:p-5 mb-4">
         <h3 className="text-headline-md text-on-surface mb-3">
           Preguntas frecuentes
@@ -110,17 +179,17 @@ export default function HelpPage() {
           {FAQS.map((f, i) => (
             <button
               key={i}
-              onClick={() => setOpen(open === i ? -1 : i)}
+              onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
               className="text-left py-3 group"
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="font-bold text-on-surface flex-1 pr-2">{f.q}</p>
                 <Icon
-                  name={open === i ? 'remove' : 'add'}
+                  name={openFaq === i ? 'remove' : 'add'}
                   className="text-primary shrink-0"
                 />
               </div>
-              {open === i && (
+              {openFaq === i && (
                 <p className="text-body-md text-on-surface-variant mt-2 animate-fade-in">
                   {f.a}
                 </p>
@@ -130,6 +199,7 @@ export default function HelpPage() {
         </div>
       </div>
 
+      {/* Contact form */}
       <div className="card p-4 sm:p-5">
         <h3 className="text-headline-md text-on-surface mb-1">
           ¿No encuentras lo que buscas?
@@ -139,13 +209,243 @@ export default function HelpPage() {
         </p>
         <ContactForm />
       </div>
-
-      <ChatModal open={chatOpen} onClose={() => setChatOpen(false)} />
-      <VideoCallModal open={videoOpen} onClose={() => setVideoOpen(false)} />
     </>
   )
 }
 
+/* ─── Chat inline section ─────────────────────────────────────────────────── */
+function ChatSection() {
+  const [messages, setMessages] = useState([
+    {
+      from: 'agent',
+      name: 'Sofía · Asistente',
+      text: '¡Hola! Soy Sofía. ¿En qué puedo ayudarte hoy?',
+      time: now(),
+    },
+  ])
+  const [draft, setDraft] = useState('')
+  const [typing, setTyping] = useState(false)
+  const scrollRef = useRef(null)
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' })
+  }, [messages, typing])
+
+  const sendMessage = (text) => {
+    const t = (text ?? draft).trim()
+    if (!t) return
+    setMessages((prev) => [...prev, { from: 'user', text: t, time: now() }])
+    setDraft('')
+    setTyping(true)
+    setTimeout(() => {
+      setTyping(false)
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: 'agent',
+          name: 'Sofía · Asistente',
+          text: agentReply(t),
+          time: now(),
+        },
+      ])
+    }, 1100 + Math.random() * 600)
+  }
+
+  return (
+    <div>
+      <div
+        ref={scrollRef}
+        className="flex flex-col gap-2 h-72 sm:h-80 overflow-y-auto pr-1 mb-3 scroll-smooth"
+      >
+        {messages.map((m, i) => (
+          <div
+            key={i}
+            className={clsx('flex items-end gap-2', m.from === 'user' && 'justify-end')}
+          >
+            {m.from === 'agent' && (
+              <div className="w-8 h-8 rounded-full bg-gradient-brand-soft text-white flex items-center justify-center text-[12px] font-bold shrink-0">
+                SF
+              </div>
+            )}
+            <div
+              className={clsx(
+                'max-w-[75%] px-3 py-2 rounded-2xl',
+                m.from === 'user'
+                  ? 'bg-gradient-brand-soft text-on-primary rounded-br-sm'
+                  : 'bg-surface-container-low text-on-surface rounded-bl-sm border border-outline-variant/40',
+              )}
+            >
+              <p className="text-caption sm:text-body-md leading-snug whitespace-pre-line">
+                {m.text}
+              </p>
+              <p
+                className={clsx(
+                  'text-[10px] mt-0.5',
+                  m.from === 'user' ? 'opacity-70' : 'text-on-surface-variant',
+                )}
+              >
+                {m.time}
+              </p>
+            </div>
+          </div>
+        ))}
+        {typing && (
+          <div className="flex items-end gap-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-brand-soft text-white flex items-center justify-center text-[12px] font-bold shrink-0">
+              SF
+            </div>
+            <div className="bg-surface-container-low border border-outline-variant/40 rounded-2xl rounded-bl-sm px-3 py-2 flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-on-surface-variant animate-pulse"
+                  style={{ animationDelay: `${i * 0.18}s` }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-1.5 flex-wrap mb-3">
+        {QUICK_REPLIES.map((q) => (
+          <button
+            key={q}
+            onClick={() => sendMessage(q)}
+            className="px-3 min-h-[40px] py-1.5 rounded-full text-caption font-semibold border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition"
+          >
+            {q}
+          </button>
+        ))}
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          sendMessage()
+        }}
+        className="flex gap-2"
+      >
+        <input
+          className="input flex-1"
+          placeholder="Escribe un mensaje…"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+        />
+        <button
+          type="submit"
+          className="btn-primary px-4 shrink-0"
+          aria-label="Enviar"
+          disabled={!draft.trim()}
+        >
+          <Icon name="send" />
+        </button>
+      </form>
+    </div>
+  )
+}
+
+/* ─── Video call inline section ────────────────────────────────────────────── */
+function VideoCallSection({ onClose }) {
+  const [scheduled, setScheduled] = useState(null)
+  const [meetLink] = useState(() => Math.random().toString(36).slice(2, 9))
+  const [form, setForm] = useState({
+    fecha: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+    hora: '10:00',
+    motivo: 'inspeccion',
+  })
+  const toast = useToast()
+
+  const submit = () => {
+    setScheduled({ ...form, perito: 'Miguel Azualde' })
+    toast.success('Tu videollamada fue agendada. Te enviamos confirmación al correo.', {
+      title: '¡Listo!',
+    })
+  }
+
+  if (scheduled) {
+    return (
+      <div className="flex flex-col items-center py-4 gap-4 text-center">
+        <div className="w-16 h-16 rounded-full bg-success-container text-on-success-container flex items-center justify-center">
+          <Icon name="event_available" className="text-[32px]" filled />
+        </div>
+        <div>
+          <h4 className="text-headline-md text-on-surface mb-1">Videollamada confirmada</h4>
+          <p className="text-body-md text-on-surface-variant">
+            Te conectaremos con <strong>{scheduled.perito}</strong> el{' '}
+            <strong>{scheduled.fecha}</strong> a las <strong>{scheduled.hora}</strong>.
+          </p>
+        </div>
+        <div className="card p-3 bg-primary-fixed/40 text-left w-full">
+          <p className="text-caption text-on-surface-variant uppercase tracking-wider mb-1">
+            Enlace de la sala
+          </p>
+          <p className="font-mono text-primary truncate">
+            meet.lamundial.com/{meetLink}
+          </p>
+        </div>
+        <button onClick={onClose} className="btn-primary">
+          <Icon name="check" /> Cerrar
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="sm:col-span-2">
+        <label className="label">Motivo de la videollamada</label>
+        <select
+          className="input"
+          value={form.motivo}
+          onChange={(e) => setForm({ ...form, motivo: e.target.value })}
+        >
+          <option value="inspeccion">Asistencia con inspección</option>
+          <option value="poliza">Dudas sobre mi póliza</option>
+          <option value="siniestro">Reporte de siniestro</option>
+          <option value="cobertura">Activar cobertura</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div>
+        <label className="label">Fecha</label>
+        <input
+          type="date"
+          className="input"
+          value={form.fecha}
+          min={new Date().toISOString().slice(0, 10)}
+          onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+        />
+      </div>
+      <div>
+        <label className="label">Hora</label>
+        <input
+          type="time"
+          className="input"
+          value={form.hora}
+          onChange={(e) => setForm({ ...form, hora: e.target.value })}
+        />
+      </div>
+      <div className="sm:col-span-2 p-3 rounded-xl bg-primary-fixed/30 border border-primary/20 flex items-start gap-2">
+        <Icon name="info" className="text-primary text-[20px] mt-0.5 shrink-0" filled />
+        <p className="text-caption text-on-primary-fixed-variant leading-snug">
+          Recibirás un correo y un push 15 minutos antes con el enlace de la sala.
+          Asegúrate de tener buena conexión y permisos de cámara.
+        </p>
+      </div>
+      <div className="sm:col-span-2 flex gap-2">
+        <button onClick={onClose} className="btn-soft flex-1">
+          Cancelar
+        </button>
+        <button onClick={submit} className="btn-primary flex-1">
+          <Icon name="event" /> Agendar videollamada
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Contact form ───────────────────────────────────────────────────────── */
 function ContactForm() {
   const toast = useToast()
   const [form, setForm] = useState({ asunto: '', mensaje: '' })
@@ -161,9 +461,7 @@ function ContactForm() {
     setTimeout(() => {
       setSending(false)
       setForm({ asunto: '', mensaje: '' })
-      toast.success('Tu mensaje fue enviado al equipo de soporte.', {
-        title: '¡Recibido!',
-      })
+      toast.success('Tu mensaje fue enviado al equipo de soporte.', { title: '¡Recibido!' })
     }, 900)
   }
 
@@ -206,274 +504,9 @@ function ContactForm() {
   )
 }
 
-const QUICK_REPLIES = [
-  '¿Cómo activo mi cobertura?',
-  '¿Cómo reporto un siniestro?',
-  'Quiero cambiar mi plan',
-  'Tengo dudas con la inspección',
-]
-
-function ChatModal({ open, onClose }) {
-  const [messages, setMessages] = useState([
-    {
-      from: 'agent',
-      name: 'Sofía · Asistente',
-      text: '¡Hola! 👋 Soy Sofía. ¿En qué puedo ayudarte hoy?',
-      time: now(),
-    },
-  ])
-  const [draft, setDraft] = useState('')
-  const [typing, setTyping] = useState(false)
-  const scrollRef = useRef(null)
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' })
-  }, [messages, typing])
-
-  const sendMessage = (text) => {
-    const t = (text ?? draft).trim()
-    if (!t) return
-    setMessages((prev) => [...prev, { from: 'user', text: t, time: now() }])
-    setDraft('')
-    setTyping(true)
-    setTimeout(() => {
-      setTyping(false)
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: 'agent',
-          name: 'Sofía · Asistente',
-          text: agentReply(t),
-          time: now(),
-        },
-      ])
-    }, 1100 + Math.random() * 600)
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Chat con La Mundial"
-      subtitle="Atención inmediata · Respuesta promedio 2 min"
-      icon="forum"
-      size="md"
-    >
-      <div
-        ref={scrollRef}
-        className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1"
-      >
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={clsx(
-              'flex items-end gap-2',
-              m.from === 'user' && 'justify-end',
-            )}
-          >
-            {m.from === 'agent' && (
-              <div className="w-8 h-8 rounded-full bg-gradient-brand-soft text-white flex items-center justify-center text-[12px] font-bold shrink-0">
-                SF
-              </div>
-            )}
-            <div
-              className={clsx(
-                'max-w-[75%] px-3 py-2 rounded-2xl',
-                m.from === 'user'
-                  ? 'bg-gradient-brand-soft text-on-primary rounded-br-sm'
-                  : 'bg-surface-container-low text-on-surface rounded-bl-sm border border-outline-variant/40',
-              )}
-            >
-              <p className="text-caption sm:text-body-md leading-snug whitespace-pre-line">
-                {m.text}
-              </p>
-              <p
-                className={clsx(
-                  'text-[10px] mt-0.5',
-                  m.from === 'user' ? 'opacity-70' : 'text-on-surface-variant',
-                )}
-              >
-                {m.time}
-              </p>
-            </div>
-          </div>
-        ))}
-        {typing && (
-          <div className="flex items-end gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-brand-soft text-white flex items-center justify-center text-[12px] font-bold shrink-0">
-              SF
-            </div>
-            <div className="bg-surface-container-low border border-outline-variant/40 rounded-2xl rounded-bl-sm px-3 py-2 flex gap-1">
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-on-surface-variant animate-pulse-soft"
-                  style={{ animationDelay: `${i * 0.18}s` }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-1.5 flex-wrap mt-3">
-        {QUICK_REPLIES.map((q) => (
-          <button
-            key={q}
-            onClick={() => sendMessage(q)}
-            className="px-3 min-h-[40px] py-1.5 rounded-full text-caption font-semibold border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition"
-          >
-            {q}
-          </button>
-        ))}
-      </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          sendMessage()
-        }}
-        className="flex gap-2 mt-3"
-      >
-        <input
-          className="input flex-1"
-          placeholder="Escribe un mensaje…"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-        />
-        <button
-          type="submit"
-          className="btn-primary px-3 shrink-0"
-          aria-label="Enviar"
-          disabled={!draft.trim()}
-        >
-          <Icon name="send" />
-        </button>
-      </form>
-    </Modal>
-  )
-}
-
-function VideoCallModal({ open, onClose }) {
-  const [scheduled, setScheduled] = useState(null)
-  const [form, setForm] = useState({
-    fecha: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
-    hora: '10:00',
-    motivo: 'inspeccion',
-  })
-  const toast = useToast()
-
-  const submit = () => {
-    setScheduled({ ...form, perito: 'Miguel Azualde' })
-    toast.success('Tu videollamada fue agendada. Te enviamos confirmación al correo.', {
-      title: '¡Listo!',
-    })
-  }
-
-  const close = () => {
-    setScheduled(null)
-    onClose()
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={close}
-      title="Videollamada con perito"
-      subtitle="Te conectamos con un experto en menos de 24h."
-      icon="videocam"
-      size="md"
-      footer={
-        scheduled ? (
-          <button onClick={close} className="btn-primary">
-            <Icon name="check" /> Cerrar
-          </button>
-        ) : (
-          <>
-            <button onClick={close} className="btn-soft">
-              Cancelar
-            </button>
-            <button onClick={submit} className="btn-primary">
-              <Icon name="event" /> Agendar
-            </button>
-          </>
-        )
-      }
-    >
-      {scheduled ? (
-        <div className="text-center py-4">
-          <div className="w-16 h-16 rounded-full bg-success-container text-on-success-container flex items-center justify-center mx-auto mb-3">
-            <Icon name="event_available" className="text-[32px]" filled />
-          </div>
-          <h4 className="text-headline-md text-on-surface mb-1">
-            Videollamada confirmada
-          </h4>
-          <p className="text-body-md text-on-surface-variant mb-3">
-            Te conectaremos con <strong>{scheduled.perito}</strong> el{' '}
-            <strong>{scheduled.fecha}</strong> a las <strong>{scheduled.hora}</strong>.
-          </p>
-          <div className="card p-3 bg-primary-fixed/40 text-left">
-            <p className="text-caption text-on-surface-variant uppercase tracking-wider">
-              Enlace de la sala
-            </p>
-            <p className="font-mono text-primary truncate">
-              meet.lamundial.com/{Math.random().toString(36).slice(2, 9)}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="sm:col-span-2">
-            <label className="label">Motivo de la videollamada</label>
-            <select
-              className="input"
-              value={form.motivo}
-              onChange={(e) => setForm({ ...form, motivo: e.target.value })}
-            >
-              <option value="inspeccion">Asistencia con inspección</option>
-              <option value="poliza">Dudas sobre mi póliza</option>
-              <option value="siniestro">Reporte de siniestro</option>
-              <option value="cobertura">Activar cobertura</option>
-              <option value="otro">Otro</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Fecha</label>
-            <input
-              type="date"
-              className="input"
-              value={form.fecha}
-              min={new Date().toISOString().slice(0, 10)}
-              onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="label">Hora</label>
-            <input
-              type="time"
-              className="input"
-              value={form.hora}
-              onChange={(e) => setForm({ ...form, hora: e.target.value })}
-            />
-          </div>
-          <div className="sm:col-span-2 p-3 rounded-lg bg-primary-fixed/30 border border-primary/20 flex items-start gap-2">
-            <Icon name="info" className="text-primary text-[20px] mt-0.5 shrink-0" filled />
-            <p className="text-caption text-on-primary-fixed-variant leading-snug">
-              Recibirás un correo y un push 15 minutos antes con el enlace de la
-              sala. Asegúrate de tener buena conexión y permisos de cámara.
-            </p>
-          </div>
-        </div>
-      )}
-    </Modal>
-  )
-}
-
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
 function now() {
-  return new Date().toLocaleTimeString('es-VE', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })
 }
 
 function agentReply(text) {
@@ -487,11 +520,8 @@ function agentReply(text) {
   if (lower.includes('plan') || lower.includes('cambiar')) {
     return 'Tenemos 3 planes (Básico, Estándar y Premium). Te paso el comparador en la sección de Cobertura — ¿cuál te interesa más?'
   }
-  if (lower.includes('inspecci')) {
-    return 'La inspección lleva 5 pasos: documentos, ubicación, fotos guiadas, daños y revisión. Tarda ~8 minutos. ¿Te ayudo a iniciar una?'
+  if (lower.includes('inspección') || lower.includes('inspeccion') || lower.includes('foto')) {
+    return 'La inspección se hace en el asistente de Inspecciones. Toma 8–12 minutos y te guiamos paso a paso con IA. ¿Tienes algún problema específico?'
   }
-  if (lower.includes('hola') || lower.includes('buenas') || lower.length < 6) {
-    return '¡Hola! Cuéntame, ¿en qué puedo ayudarte hoy? Estoy aquí para todo lo relacionado con tu Auto Casco.'
-  }
-  return 'Entendido. Voy a transferir tu consulta a un agente humano. Mientras tanto, ¿puedes contarme más detalles?'
+  return '¡Gracias por tu mensaje! Un agente humano tomará la conversación en breve. Mientras tanto, revisa las FAQ de esta página — quizás encuentres la respuesta al instante.'
 }

@@ -3,7 +3,6 @@ import clsx from 'clsx'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import Icon from '../components/ui/Icon'
-import Modal from '../components/ui/Modal'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 
@@ -224,14 +223,93 @@ export default function PaymentsPage() {
                   }}
                 />
               ))}
-              <button
-                onClick={() => setMethodOpen(true)}
-                className="btn-soft w-full mt-2"
-              >
-                <Icon name="add" /> Agregar método
-              </button>
+              {!methodOpen && (
+                <button
+                  onClick={() => setMethodOpen(true)}
+                  className="btn-soft w-full mt-2"
+                >
+                  <Icon name="add" /> Agregar método
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Inline "Agregar método de pago" — no modal */}
+          {methodOpen && (
+            <div className="card p-4 sm:p-5 border-2 border-primary/30 bg-primary-fixed/10 animate-slide-up">
+              <div className="flex items-center justify-between mb-4 gap-2">
+                <div className="flex items-center gap-2">
+                  <Icon name="add_card" className="text-primary text-[22px]" filled />
+                  <div>
+                    <h4 className="text-headline-md text-on-surface">Nuevo método de pago</h4>
+                    <p className="text-caption text-on-surface-variant">
+                      Tus datos se cifran y guardan de forma segura.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMethodOpen(false)}
+                  className="btn-icon"
+                  aria-label="Cerrar"
+                >
+                  <Icon name="close" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {METHOD_TYPES.map((t) => (
+                  <button
+                    key={t.v}
+                    onClick={() => setMethodDraft({ ...methodDraft, type: t.v })}
+                    className={clsx(
+                      'p-3 min-h-[56px] rounded-xl border-2 transition flex flex-col items-center gap-1 active:scale-95',
+                      methodDraft.type === t.v
+                        ? 'border-primary bg-primary-fixed/40 ring-2 ring-primary/20 text-primary'
+                        : 'border-outline-variant text-on-surface-variant hover:border-primary/40',
+                    )}
+                  >
+                    <Icon name={t.icon} className="text-[22px]" filled />
+                    <span className="text-caption font-bold">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {methodDraft.type === 'card' && (
+                <CardForm draft={methodDraft} setDraft={setMethodDraft} />
+              )}
+              {methodDraft.type === 'transfer' && (
+                <TransferForm draft={methodDraft} setDraft={setMethodDraft} />
+              )}
+              {methodDraft.type === 'pago-movil' && (
+                <PagoMovilForm draft={methodDraft} setDraft={setMethodDraft} />
+              )}
+
+              <div className="flex gap-2 mt-4 pt-3 border-t border-outline-variant/40">
+                <button
+                  onClick={() => setMethodOpen(false)}
+                  className="btn-soft flex-1"
+                  disabled={savingMethod}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveMethod}
+                  className="btn-primary flex-1"
+                  disabled={savingMethod}
+                >
+                  {savingMethod ? (
+                    <>
+                      <Icon name="progress_activity" className="animate-spin" /> Guardando…
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="lock" /> Guardar método
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </aside>
 
         <div className="lg:col-span-2 lg:order-1 card overflow-hidden">
@@ -316,63 +394,6 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {/* Add method modal */}
-      <Modal
-        open={methodOpen}
-        onClose={() => !savingMethod && setMethodOpen(false)}
-        title="Nuevo método de pago"
-        subtitle="Tus datos se cifran y se guardan de forma segura."
-        icon="add_card"
-        size="lg"
-        footer={
-          <>
-            <button
-              onClick={() => setMethodOpen(false)}
-              className="btn-soft"
-              disabled={savingMethod}
-            >
-              Cancelar
-            </button>
-            <button onClick={saveMethod} className="btn-primary" disabled={savingMethod}>
-              {savingMethod ? (
-                <>
-                  <Icon name="progress_activity" className="animate-spin" /> Guardando…
-                </>
-              ) : (
-                <>
-                  <Icon name="lock" /> Guardar
-                </>
-              )}
-            </button>
-          </>
-        }
-      >
-        <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 mb-4">
-          {METHOD_TYPES.map((t) => (
-            <button
-              key={t.v}
-              onClick={() => setMethodDraft({ ...methodDraft, type: t.v })}
-              className={clsx(
-                'p-3 min-h-[56px] rounded-xl border-2 transition flex xs:flex-col items-center gap-2 xs:gap-1 active:scale-95',
-                methodDraft.type === t.v
-                  ? 'border-primary bg-primary-fixed/40 ring-2 ring-primary/20 text-primary'
-                  : 'border-outline-variant text-on-surface-variant hover:border-primary/40',
-              )}
-            >
-              <Icon name={t.icon} className="text-[24px]" filled />
-              <span className="text-caption font-bold">{t.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {methodDraft.type === 'card' && <CardForm draft={methodDraft} setDraft={setMethodDraft} />}
-        {methodDraft.type === 'transfer' && (
-          <TransferForm draft={methodDraft} setDraft={setMethodDraft} />
-        )}
-        {methodDraft.type === 'pago-movil' && (
-          <PagoMovilForm draft={methodDraft} setDraft={setMethodDraft} />
-        )}
-      </Modal>
     </>
   )
 }
