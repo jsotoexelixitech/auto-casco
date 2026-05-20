@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react'
-import { ESTADO_PIEZA, PHOTO_SEQUENCES } from '../../data/mockData'
+import { ESTADO_PIEZA } from '../../data/mockData'
+import { getActiveSequences } from '../../utils/sequencesConfig'
 
 const initialPhotoState = () =>
-  PHOTO_SEQUENCES.reduce((acc, s) => {
+  getActiveSequences().reduce((acc, s) => {
     acc[s.id] = {
       uploaded: false,
       analyzing: false,

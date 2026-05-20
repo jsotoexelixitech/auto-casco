@@ -179,8 +179,10 @@ export default {
       fontSize: {
         // tokens — fluid (min, vw, max)
         'display-2xl': ['clamp(2.25rem, 5.5vw + 1rem, 4rem)', { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'display-lg': ['clamp(1.75rem, 3.5vw + 1rem, 3rem)', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'headline-lg': ['clamp(1.5rem, 1.8vw + 1rem, 2rem)', { lineHeight: '1.2', fontWeight: '700' }],
+        'display-lg':  ['clamp(1.75rem, 3.5vw + 1rem, 3rem)',  { lineHeight: '1.1',  letterSpacing: '-0.02em', fontWeight: '700' }],
+        'display-md':  ['clamp(1.5rem,  2.5vw + 1rem, 2.25rem)',{ lineHeight: '1.15', letterSpacing: '-0.01em', fontWeight: '700' }],
+        'display-sm':  ['clamp(1.25rem, 1.8vw + 1rem, 1.75rem)',{ lineHeight: '1.2',  letterSpacing: '-0.01em', fontWeight: '700' }],
+        'headline-lg': ['clamp(1.5rem,  1.8vw + 1rem, 2rem)',   { lineHeight: '1.2',  fontWeight: '700' }],
         'headline-md': ['clamp(1.125rem, 0.7vw + 1rem, 1.5rem)', { lineHeight: '1.3', fontWeight: '600' }],
         'body-lg': ['clamp(1rem, 0.2vw + 0.95rem, 1.125rem)', { lineHeight: '1.6', fontWeight: '400' }],
         'body-md': ['1rem', { lineHeight: '1.55', fontWeight: '400' }],

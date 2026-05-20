@@ -35,11 +35,17 @@ export async function probeBackend() {
     const timeoutId = setTimeout(() => controller.abort(), 1500)
     const res = await fetch(`${BASE_URL}/health`, {
       signal: controller.signal,
+      // Avoid browser network-error logs when backend is simply not running
+      cache: 'no-store',
     })
     clearTimeout(timeoutId)
     backendAvailable = res.ok
+    if (!backendAvailable) {
+      console.info('[AutoCasco] Backend no disponible — modo demo activo.')
+    }
   } catch {
     backendAvailable = false
+    console.info('[AutoCasco] Backend no disponible — modo demo activo.')
   }
   return backendAvailable
 }

@@ -1,46 +1,34 @@
-// PM2 — Modo DESARROLLO con Cloudflare Tunnel persistente
-// Persiste aunque cierres SSH / MobaXterm
-//
-// Uso:
-//   pm2 start ecosystem.dev.config.cjs
-//   pm2 logs                       (ver todos los logs en tiempo real)
-//   pm2 logs aci-tunnel            (ver URL pública de Cloudflare)
-//   pm2 status                     (ver estado de todos los procesos)
-//   pm2 stop all
-//   pm2 delete all
-
 'use strict'
-
-const path = require('path')
-const ROOT = __dirname
 
 module.exports = {
   apps: [
-    // ── Vite dev server ──────────────────────────────────────
     {
-      name      : 'aci-web',
-      cwd       : ROOT,
-      script    : 'node_modules/.bin/vite',
-      args      : '--host',
-      watch     : false,
-      autorestart: true,
-      env: { NODE_ENV: 'development' },
-      out_file  : path.join(ROOT, 'logs', 'web.out.log'),
-      error_file: path.join(ROOT, 'logs', 'web.err.log'),
-      merge_logs: true,
-      time      : true,
+      name         : 'frontend',
+      script       : 'node_modules/vite/bin/vite.js',
+      args         : '--host',
+      cwd          : __dirname,
+      autorestart  : true,
+      watch        : false,
+      max_restarts : 5,
+      restart_delay: 3000,
+      env          : { NODE_ENV: 'development' },
+      out_file     : './logs/frontend-out.log',
+      error_file   : './logs/frontend-err.log',
+      merge_logs   : true,
     },
-    // ── Cloudflare Tunnel (apunta a Vite :5173) ──────────────
     {
-      name      : 'aci-tunnel',
-      script    : 'cloudflared',
-      args      : 'tunnel --url http://localhost:5173',
-      watch     : false,
-      autorestart: true,
-      out_file  : path.join(ROOT, 'logs', 'tunnel.out.log'),
-      error_file: path.join(ROOT, 'logs', 'tunnel.err.log'),
-      merge_logs: true,
-      time      : true,
+      name         : 'backend',
+      script       : 'node_modules/@nestjs/cli/bin/nest.js',
+      args         : 'start --watch',
+      cwd          : __dirname + '\\backend',
+      autorestart  : true,
+      watch        : false,
+      max_restarts : 5,
+      restart_delay: 3000,
+      env          : { NODE_ENV: 'development' },
+      out_file     : __dirname + '\\logs\\backend-out.log',
+      error_file   : __dirname + '\\logs\\backend-err.log',
+      merge_logs   : true,
     },
   ],
 }

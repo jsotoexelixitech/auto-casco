@@ -2,7 +2,6 @@ import { useState } from 'react'
 import clsx from 'clsx'
 import Icon from '../../components/ui/Icon'
 import { useToast } from '../../context/ToastContext'
-import { useAuth } from '../../context/AuthContext'
 
 const DAMAGE_TYPES = [
   { id: 'rayón', label: 'Rayón' },
@@ -26,8 +25,6 @@ export default function Step4Damages({ state }) {
     observacionesRiesgo, setObservacionesRiesgo,
     iaDiagnostico, setIaDiagnostico,
   } = state
-  const { user } = useAuth()
-  const isPerito = user?.role === 'perito' || user?.role === 'admin'
   const toast = useToast()
   const [showAdd, setShowAdd] = useState(false)
   const [generatingIA, setGeneratingIA] = useState(false)
@@ -87,6 +84,21 @@ export default function Step4Damages({ state }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2 flex flex-col gap-4">
+
+        <div className="flex items-start gap-3 p-3 sm:p-4 rounded-xl border"
+          style={{ backgroundColor: '#EEF0FA', borderColor: 'rgba(15,26,90,0.15)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: '#D8DCF2', color: '#0F1A5A' }}>
+            <Icon name="info" className="text-[22px]" filled />
+          </div>
+          <div>
+            <p className="font-bold text-sm" style={{ color: '#0F1A5A' }}>Reporta daños visibles en tu vehículo</p>
+            <p className="text-caption text-on-surface-variant mt-0.5 leading-snug">
+              Agrega los daños que observes. La IA los complementará con el análisis de las fotos para generar el informe final.
+            </p>
+          </div>
+        </div>
+
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-outline-variant/50 gap-2">
             <div className="flex items-center gap-2 min-w-0">
@@ -289,74 +301,66 @@ export default function Step4Damages({ state }) {
         </div>
       </div>
 
-      {/* Text fields — ONLY for perito/admin */}
-      {isPerito ? (
-        <div className="card p-4 sm:p-5 flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-2 pb-3 border-b border-outline-variant/50">
-            <div className="flex items-center gap-2">
-              <Icon name="description" className="text-primary text-[22px]" filled />
-              <h3 className="text-headline-md text-on-surface">Descripción y Observaciones</h3>
-            </div>
-            <span className="text-[10px] bg-primary text-on-primary px-2.5 py-1 rounded-full font-bold uppercase tracking-wide shrink-0">
-              Solo Perito
-            </span>
-          </div>
-
-          <div>
-            <label className="label flex items-center gap-1.5">
-              <Icon name="edit_note" className="text-[18px] text-on-surface-variant" />
-              Descripción de los Daños
-            </label>
-            <textarea
-              className="input min-h-[88px] resize-none"
-              placeholder="Describe detalladamente los daños observados en el vehículo…"
-              value={descripcionDanios}
-              onChange={(e) => setDescripcionDanios(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="label flex items-center gap-1.5">
-              <Icon name="assignment" className="text-[18px] text-on-surface-variant" />
-              Observaciones y Opinión del Riesgo
-            </label>
-            <textarea
-              className="input min-h-[88px] resize-none"
-              placeholder="Opinión técnica del perito sobre el riesgo del vehículo…"
-              value={observacionesRiesgo}
-              onChange={(e) => setObservacionesRiesgo(e.target.value)}
-            />
-          </div>
-
-          {/* AI Diagnosis */}
-          <div className="border border-outline-variant/40 rounded-xl p-3 bg-surface-container-low/60">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2">
-                <Icon name="auto_awesome" className="text-primary text-[20px]" filled />
-                <span className="text-label-md font-semibold text-on-surface">Diagnóstico IA</span>
-              </div>
-              <button
-                onClick={generateIaDiagnostico}
-                disabled={generatingIA}
-                className="btn-soft text-caption py-1.5 px-3 min-h-[36px]"
-              >
-                {generatingIA ? (
-                  <><Icon name="progress_activity" className="animate-spin text-[16px]" /> Generando…</>
-                ) : (
-                  <><Icon name="auto_awesome" className="text-[16px]" /> Generar diagnóstico</>
-                )}
-              </button>
-            </div>
-            {iaDiagnostico ? (
-              <p className="text-body-md text-on-surface leading-relaxed">{iaDiagnostico}</p>
-            ) : (
-              <p className="text-caption text-on-surface-variant italic">
-                Haz clic en "Generar diagnóstico" para que la IA analice los daños registrados.
-              </p>
-            )}
-          </div>
+      <div className="card p-4 sm:p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-outline-variant/50">
+          <Icon name="description" className="text-primary text-[22px]" filled />
+          <h3 className="text-headline-md text-on-surface">Descripción y Observaciones</h3>
         </div>
-      ) : null}
+
+        <div>
+          <label className="label flex items-center gap-1.5">
+            <Icon name="edit_note" className="text-[18px] text-on-surface-variant" />
+            Descripción de los Daños
+          </label>
+          <textarea
+            className="input min-h-[88px] resize-none"
+            placeholder="Describe detalladamente los daños observados en el vehículo…"
+            value={descripcionDanios}
+            onChange={(e) => setDescripcionDanios(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="label flex items-center gap-1.5">
+            <Icon name="assignment" className="text-[18px] text-on-surface-variant" />
+            Observaciones adicionales
+          </label>
+          <textarea
+            className="input min-h-[88px] resize-none"
+            placeholder="Observaciones adicionales sobre el estado del vehículo…"
+            value={observacionesRiesgo}
+            onChange={(e) => setObservacionesRiesgo(e.target.value)}
+          />
+        </div>
+
+        {/* Diagnóstico IA */}
+        <div className="border border-outline-variant/40 rounded-xl p-3 bg-surface-container-low/60">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Icon name="auto_awesome" className="text-primary text-[20px]" filled />
+              <span className="text-label-md font-semibold text-on-surface">Diagnóstico IA</span>
+            </div>
+            <button
+              onClick={generateIaDiagnostico}
+              disabled={generatingIA}
+              className="btn-soft text-caption py-1.5 px-3 min-h-[36px]"
+            >
+              {generatingIA ? (
+                <><Icon name="progress_activity" className="animate-spin text-[16px]" /> Generando…</>
+              ) : (
+                <><Icon name="auto_awesome" className="text-[16px]" /> Generar diagnóstico</>
+              )}
+            </button>
+          </div>
+          {iaDiagnostico ? (
+            <p className="text-body-md text-on-surface leading-relaxed">{iaDiagnostico}</p>
+          ) : (
+            <p className="text-caption text-on-surface-variant italic">
+              Haz clic en "Generar diagnóstico" para que la IA analice los daños registrados.
+            </p>
+          )}
+        </div>
+      </div>
 
       <aside className="card p-4 sm:p-5 flex flex-col">
         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-outline-variant/50">

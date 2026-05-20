@@ -15,6 +15,13 @@ import {
 } from '../data/mockData'
 import * as api from '../services/api'
 import { getToken } from '../services/api'
+import {
+  normalizePolicies,
+  normalizePagos,
+  normalizePago,
+  normalizeMethods,
+  normalizeMethod,
+} from '../utils/dataNormalizers'
 
 const DataContext = createContext(null)
 
@@ -269,63 +276,9 @@ export function DataProvider({ children }) {
   )
 }
 
-export const useData = () => {
+export function useData() {
   const ctx = useContext(DataContext)
   if (!ctx) throw new Error('useData must be used inside DataProvider')
   return ctx
 }
 
-/* ── Normalizers (API → frontend shape) ──────────────────────────────── */
-function normalizePolicies(list) {
-  return list.map((p) => ({
-    ...p,
-    // Keep dbId for API calls, id stays the human-readable numero
-    dbId: p.id,
-    id: p.numero ?? p.id,
-    numero: p.numero ?? p.id,
-    plan: p.plan ?? p.planNombre ?? 'Estándar',
-    modalidad: p.modalidad === 'dias' ? 'Por Días' : p.modalidad,
-    vigenciaDesde: p.vigenciaDesde ?? p.fechaInicio?.slice(0, 10) ?? '',
-    vigenciaHasta: p.vigenciaHasta ?? p.fechaFin?.slice(0, 10) ?? '',
-    saldo: p.saldo ?? p.saldoDisponible ?? 0,
-    coberturas: Array.isArray(p.coberturas) ? p.coberturas : [],
-  }))
-}
-
-function normalizePagos(list) {
-  return list.map((p) => ({
-    id: p.id,
-    fecha: p.fecha?.slice(0, 10) ?? p.createdAt?.slice(0, 10) ?? '',
-    concepto: p.concepto,
-    metodo: p.metodo,
-    monto: p.monto,
-    estado: p.estado,
-  }))
-}
-
-function normalizePago(p) {
-  return {
-    id: p.id,
-    fecha: p.fecha?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
-    concepto: p.concepto,
-    metodo: p.metodo,
-    monto: p.monto,
-    estado: p.estado,
-  }
-}
-
-function normalizeMethods(list) {
-  return list.map(normalizeMethod)
-}
-
-function normalizeMethod(m) {
-  return {
-    id: m.id,
-    type: m.type,
-    label: m.label,
-    sub: m.sub,
-    icon: m.icon ?? 'credit_card',
-    primary: m.isPrimary ?? m.primary ?? false,
-    isPrimary: m.isPrimary ?? m.primary ?? false,
-  }
-}

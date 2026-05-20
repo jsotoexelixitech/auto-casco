@@ -9,7 +9,7 @@ export default function PageHeader({
   eyebrow,
 }) {
   return (
-    <header className="mb-5 sm:mb-6 md:mb-7 flex flex-col md:flex-row md:items-end md:justify-between gap-3 md:gap-4">
+    <header className="mb-4 sm:mb-5 md:mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-3 md:gap-5">
       <div className="min-w-0 flex-1">
         {breadcrumbs.length > 0 && (
           <nav className="flex items-center text-caption text-on-surface-variant mb-1.5 flex-wrap">
@@ -40,7 +40,7 @@ export default function PageHeader({
           {title}
         </h1>
         {subtitle && (
-          <p className="text-body-md sm:text-body-lg text-on-surface-variant mt-1 max-w-2xl">
+          <p className="text-body-md sm:text-body-lg text-on-surface-variant mt-2 max-w-2xl">
             {subtitle}
           </p>
         )}

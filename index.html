@@ -14,12 +14,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- black-translucent: el área del status bar es transparente, nuestro div navy la cubre -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
     <meta
       name="description"
       content="La Mundial de Seguros — 52 años contigo. Auto Casco: plataforma digital de inspección de vehículos, emisión y activación de pólizas con IA."
     />
+    <!-- theme-color navy → controla color del status bar en Android Chrome y PWA -->
+    <meta name="theme-color" content="#0F1A5A" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F1A5A" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#0F1A5A" />
     <title>La Mundial de Seguros · Auto Casco | Inspección Digital</title>
   </head>

@@ -35,7 +35,7 @@ export default function PoliciesPage() {
         title="Pólizas"
         subtitle="Gestiona todas las pólizas de Auto Casco emitidas en la plataforma."
         actions={
-          <Link to="/emision" className="btn-primary">
+          <Link to="/inspecciones/nueva" className="btn-primary">
             <Icon name="add" /> <span className="hidden sm:inline">Emitir Póliza</span>
             <span className="sm:hidden">Emitir</span>
           </Link>
@@ -82,15 +82,17 @@ export default function PoliciesPage() {
           return (
             <button
               key={p.id}
+              type="button"
               onClick={() => navigate(`/polizas/${p.id}`)}
-              className="card p-0 overflow-hidden text-left group hover:-translate-y-1 hover:shadow-elev-2 transition-all active:scale-[0.99]"
+              className="safe-clip card p-0 text-left group hover:-translate-y-1 hover:shadow-elev-2 transition-[transform,box-shadow] duration-300 ease-out active:scale-[0.99]"
             >
-              <div className="relative h-36 sm:h-40 bg-surface-container overflow-hidden">
+              <div className="relative h-36 sm:h-40 bg-surface-container overflow-hidden rounded-t-xl isolate">
                 {v && (
                   <img
                     src={v.image}
                     alt={`${v.marca} ${v.modelo}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover transform-gpu group-hover:scale-105 transition-transform duration-500 ease-out"
+                    draggable={false}
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />

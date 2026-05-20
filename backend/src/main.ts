@@ -68,12 +68,15 @@ async function bootstrap() {
       },
       'JWT-auth',
     )
-    .addTag('auth', 'Autenticación y sesión')
-    .addTag('users', 'Gestión de usuarios')
-    .addTag('vehicles', 'Vehículos')
-    .addTag('policies', 'Pólizas')
-    .addTag('inspections', 'Inspecciones')
-    .addTag('health', 'Estado del servicio')
+    .addTag('Auth', 'Autenticación y sesión')
+    .addTag('Users', 'Gestión de usuarios')
+    .addTag('Vehicles', 'Vehículos')
+    .addTag('Policies', 'Pólizas')
+    .addTag('Inspections', 'Inspecciones')
+    .addTag('Payments', 'Pagos y métodos de pago')
+    .addTag('Siniestros', 'Siniestros / reclamos')
+    .addTag('Plans', 'Planes de cobertura')
+    .addTag('Health', 'Estado del servicio')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup(swaggerPath, app, document, {
@@ -82,9 +85,13 @@ async function bootstrap() {
 
   // ─── Start ───────────────────────────────────────────────────────────
   const port = config.get<number>('port') ?? 3001;
-  await app.listen(port);
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen(port, host);
   logger.log(`🚀 API listening on http://localhost:${port}/api/v1`);
   logger.log(`📚 Swagger docs at  http://localhost:${port}/${swaggerPath}`);
+  if (host === '0.0.0.0') {
+    logger.log(`🌐 Red local: http://<tu-ip>:${port}/api/v1`);
+  }
 }
 
 bootstrap().catch((err) => {

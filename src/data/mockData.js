@@ -1,39 +1,18 @@
 // Mock data for La Mundial - Auto Casco Demo
 // Realistic seed data for users, vehicles, policies, inspections.
+export { PHOTO_SEQUENCES } from './photoSequences'
 
 export const ROLES = {
-  ADMIN: 'admin',
-  PERITO: 'perito',
   ASEGURADO: 'asegurado',
   INTERMEDIARIO: 'intermediario',
 }
 
 export const ROLE_LABELS = {
-  admin: 'Administrador',
-  perito: 'Perito',
   asegurado: 'Asegurado',
   intermediario: 'Intermediario',
 }
 
 export const DEMO_USERS = [
-  {
-    id: 'u-001',
-    name: 'Miguel Azualde',
-    email: 'miguel.azualde@lamundial.com',
-    role: ROLES.PERITO,
-    avatar: 'MA',
-    title: 'Gerente de Automóvil',
-    color: 'bg-primary-container',
-  },
-  {
-    id: 'u-002',
-    name: 'Joelmis Materano',
-    email: 'joelmis.materano@exelixitech.com',
-    role: ROLES.PERITO,
-    avatar: 'JM',
-    title: 'Coordinador de Procesos',
-    color: 'bg-tertiary-container',
-  },
   {
     id: 'u-003',
     name: 'Carolina Rivas',
@@ -51,15 +30,6 @@ export const DEMO_USERS = [
     avatar: 'RP',
     title: 'Asegurado',
     color: 'bg-success',
-  },
-  {
-    id: 'u-005',
-    name: 'Admin Sistema',
-    email: 'admin@lamundial.com',
-    role: ROLES.ADMIN,
-    avatar: 'AS',
-    title: 'Administrador',
-    color: 'bg-primary',
   },
 ]
 
@@ -246,13 +216,12 @@ export const INSPECTIONS = [
     id: 'INS-2026-883',
     numero: 'INS-2026-883',
     estado: INSPECTION_STATUS.APROBADA,
-    tipo: 'In-situ (Perito)',
+    tipo: 'In-situ (Presencial)',
     fechaCreacion: '2026-05-02T08:14:00',
     fechaCierre: '2026-05-02T11:45:00',
     progreso: 100,
     vehicleId: 'veh-002',
     asignadoA: 'u-004',
-    peritoId: 'u-001',
     ubicacion: {
       lat: 10.481,
       lng: -66.864,
@@ -269,7 +238,6 @@ export const INSPECTIONS = [
     progreso: 88,
     vehicleId: 'veh-003',
     asignadoA: 'u-003',
-    peritoId: 'u-002',
     ubicacion: { lat: 10.503, lng: -66.892, direccion: 'Las Mercedes' },
     danios: 1,
   },
@@ -282,7 +250,6 @@ export const INSPECTIONS = [
     progreso: 100,
     vehicleId: 'veh-002',
     asignadoA: 'u-004',
-    peritoId: 'u-001',
     ubicacion: { lat: 10.475, lng: -66.851, direccion: 'Chacao' },
     danios: 5,
     motivoRechazo: 'Fotos con baja calidad. Se requiere repetir captura.',
@@ -290,166 +257,6 @@ export const INSPECTIONS = [
 ]
 
 // Photo sequences per meeting minutes (2026-05-05)
-// excludeVehicleTypes: sequences excluded for certain vehicle types
-export const PHOTO_SEQUENCES = [
-  {
-    id: 'seq-frontal-placa',
-    nombre: 'Frontal con Placa',
-    descripcion: 'Secuencia panorámica de frente donde se visualice la placa delantera.',
-    icon: 'directions_car',
-    requierePlaca: true,
-    excludeVehicleTypes: ['Moto', 'Remolque'],
-    diagramZone: 'front',
-    piezas: [
-      'Capot',
-      'Cocuyo Guard. Der',
-      'Cocuyo Guard. Izq',
-      'Parabrisas Del.',
-      'Parach. Delant.',
-      'Faro Derecho',
-      'Faro Izquierdo',
-      'Cocuyo Derec.',
-      'Cocuyo Izquierd.',
-      'Cocuyo Neblina D',
-      'Cocuyo Neblina I',
-      'Parrilla Central',
-    ],
-    piezasOpcionales: ['Mataburro'],
-  },
-  {
-    id: 'seq-frontal-lat-der',
-    nombre: 'Frontal + Lateral Derecho',
-    descripcion: 'Secuencia panorámica del área delantera con el lateral derecho.',
-    icon: 'turn_right',
-    excludeVehicleTypes: ['Moto', 'Remolque'],
-    diagramZone: 'front-right',
-    piezas: [
-      'Cocuyo Guard. Der',
-      'Estribo Derecho',
-      'Guardaf. D. Der',
-      'Retrovisor Der',
-      'Puerta D. Derecha',
-      'Platina Pta. D.D.',
-      'Tapicer. Pta. D.D.',
-      'Vidrio Pta. D.D.',
-    ],
-    piezasOpcionales: ['Estribo Posapie Der'],
-  },
-  {
-    id: 'seq-trasera-placa',
-    nombre: 'Trasera con Placa',
-    descripcion: 'Área trasera donde se visualice la placa trasera.',
-    icon: 'directions_car',
-    requierePlaca: true,
-    diagramZone: 'rear',
-    piezas: ['Placa Trasera', 'Parachoques Tras.', 'Maletero', 'Faros Tras.'],
-  },
-  {
-    id: 'seq-trasera-lat-der',
-    nombre: 'Trasera + Lateral Derecho',
-    descripcion: 'Área trasera con el lateral derecho.',
-    icon: 'turn_right',
-    diagramZone: 'rear-right',
-    piezas: ['Maletero', 'Faro Tras. Der.', 'Puerta Tras. Der.', 'Aro Tras. Der.'],
-  },
-  {
-    id: 'seq-frontal-lat-izq',
-    nombre: 'Frontal + Lateral Izquierdo',
-    descripcion: 'Área delantera con el lateral izquierdo.',
-    icon: 'turn_left',
-    diagramZone: 'front-left',
-    piezas: [
-      'Capot',
-      'Parabrisas Del.',
-      'Faro Del. Izq.',
-      'Espejo Izq.',
-      'Puerta Del. Izq.',
-    ],
-  },
-  {
-    id: 'seq-trasera-lat-izq',
-    nombre: 'Trasera + Lateral Izquierdo',
-    descripcion: 'Área trasera con el lateral izquierdo.',
-    icon: 'turn_left',
-    diagramZone: 'rear-left',
-    piezas: [
-      'Maletero',
-      'Faro Tras. Izq.',
-      'Puerta Tras. Izq.',
-      'Aro Tras. Izq.',
-    ],
-  },
-  {
-    id: 'seq-serial',
-    nombre: 'Impronta / Serial',
-    descripcion: 'Foto de la impronta (serial de carrocería) y serial troquelado.',
-    icon: 'qr_code_2',
-    diagramZone: 'serial',
-    piezas: ['Serial Body (Impronta)', 'Serial Troquelado'],
-  },
-  {
-    id: 'seq-seguridad',
-    nombre: 'Sistemas de Seguridad',
-    descripcion: 'Alarma, cinturones de seguridad y bolsas de aire.',
-    icon: 'shield',
-    diagramZone: 'interior',
-    piezas: ['Alarma', 'Cinturones', 'Airbags'],
-  },
-  {
-    id: 'seq-tablero',
-    nombre: 'Check Panel',
-    descripcion: 'Tablero indicando el kilometraje de recorrido.',
-    icon: 'speed',
-    diagramZone: 'dashboard',
-    piezas: ['Tablero / Odómetro'],
-  },
-  {
-    id: 'seq-interior',
-    nombre: 'Tablero e Interior',
-    descripcion: 'Tablero, asientos delanteros y traseros.',
-    icon: 'event_seat',
-    diagramZone: 'interior',
-    piezas: ['Tablero', 'Asientos Delanteros', 'Asientos Traseros'],
-  },
-  {
-    id: 'seq-repuesto',
-    nombre: 'Caucho de Repuesto',
-    descripcion: 'Caucho y rin de repuesto, gato, llave de gato y triángulo.',
-    icon: 'build_circle',
-    diagramZone: 'trunk',
-    piezas: ['Caucho Repuesto', 'Gato', 'Llave de Gato', 'Triángulo'],
-  },
-  {
-    id: 'seq-danios',
-    nombre: 'Daños Iniciales',
-    descripcion: 'Señalamiento de daños visibles al momento de la inspección.',
-    icon: 'report',
-    diagramZone: 'damages',
-    piezas: ['Daños identificados'],
-  },
-]
-
-// Asegurabilidad rules per meeting minutes 2026-05-05:
-// - (R + M) >= 15 → NO ASEGURABLE
-// - R > 15 (solo regulares) → NO ASEGURABLE
-// - All B → ASEGURABLE
-// - R <= 15 and M == 0 → ASEGURABLE
-export function calcularAsegurabilidad(photos) {
-  let totalR = 0
-  let totalM = 0
-  PHOTO_SEQUENCES.forEach((s) => {
-    const ph = photos[s.id]
-    if (!ph) return
-    Object.values(ph.piezas).forEach((p) => {
-      if (p.estado === ESTADO_PIEZA.REGULAR) totalR++
-      if (p.estado === ESTADO_PIEZA.MALO) totalM++
-    })
-  })
-  const totalRM = totalR + totalM
-  const asegurable = totalRM < 15 && totalR <= 15
-  return { totalR, totalM, totalRM, asegurable }
-}
-
 export const ESTADO_PIEZA = {
   BUENO: 'B',
   REGULAR: 'R',

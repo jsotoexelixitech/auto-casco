@@ -73,7 +73,7 @@ export default function SiniestroNuevoPage() {
         icon: 'car_crash',
         tone: 'error',
       })
-      toast.success(`Reporte ${numero} creado. Un perito te contactará en breve.`, {
+      toast.success(`Reporte ${numero} creado. Te notificaremos sobre el seguimiento.`, {
         title: '¡Listo!',
         duration: 4000,
       })
@@ -266,7 +266,7 @@ export default function SiniestroNuevoPage() {
               <ol className="space-y-2">
                 {[
                   'Tu reporte llega al equipo en segundos',
-                  'Un perito te llama en < 30 minutos',
+                  'Te contactamos en menos de 30 minutos',
                   'Se agenda la inspección del vehículo',
                   'Recibís resolución en 3–5 días hábiles',
                 ].map((step, i) => (

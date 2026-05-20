@@ -23,18 +23,11 @@ const TIPOS = [
     desc: 'Captura guiada con IA desde el móvil del cliente.',
   },
   {
-    id: 'in-situ',
-    label: 'In-situ',
-    sub: 'Perito',
-    icon: 'support_agent',
-    desc: 'Inspección presencial realizada por un perito.',
-  },
-  {
     id: 'video',
     label: 'Videollamada',
     sub: 'Asistida',
     icon: 'videocam',
-    desc: 'Perito guía al cliente en tiempo real.',
+    desc: 'Un experto de La Mundial te guía en tiempo real.',
   },
 ]
 
@@ -73,7 +66,7 @@ export default function InspectionsListPage() {
       <PageHeader
         breadcrumbs={[{ label: 'Inicio', to: '/dashboard' }, { label: 'Inspecciones' }]}
         title="Inspecciones"
-        subtitle="Captura guiada de imágenes y video con flujos diferenciados para cliente y perito."
+        subtitle="Captura guiada de imágenes y video del estado del vehículo."
         actions={
           <Link to="/inspecciones/nueva" className="btn-accent">
             <Icon name="add_a_photo" /> Nueva
@@ -81,22 +74,14 @@ export default function InspectionsListPage() {
         }
       />
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
-        <StatCard icon="verified" label="Total" value={stats.total} tone="deep" />
-        <StatCard icon="autorenew" label="En progreso" value={stats.enProg} hint="captura activa" tone="primary" />
-        <StatCard
-          icon="rule"
-          label="Por validar"
-          value={stats.pend}
-          tone="info"
-          hint="esperando perito"
-        />
-        <StatCard
-          icon="task_alt"
-          label="Aprobadas"
-          value={stats.apro}
-          tone="success"
-        />
+      {/* navy-deep · navy-soft · rojo · plata */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5">
+        <StatCard icon="verified" label="Total" value={stats.total} tone="navy-deep" />
+        <StatCard icon="autorenew" label="En progreso" value={stats.enProg}
+          hint="captura activa" tone="navy-soft" />
+        <StatCard icon="rule" label="Por validar" value={stats.pend}
+          hint="en revisión" tone="silver" />
+        <StatCard icon="task_alt" label="Aprobadas" value={stats.apro} tone="silver" />
       </section>
 
       {/* Tipos de inspección */}
@@ -104,7 +89,7 @@ export default function InspectionsListPage() {
         <h3 className="text-headline-md mb-3 text-on-surface">
           Iniciar nueva inspección
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {TIPOS.map((t) => (
             <button
               key={t.id}
@@ -200,8 +185,8 @@ export default function InspectionsListPage() {
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 bg-surface-container h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-accent rounded-full"
-                        style={{ width: `${i.progreso}%` }}
+                        className="h-full rounded-full"
+                        style={{ width: `${i.progreso}%`, backgroundColor: '#0F1A5A' }}
                       />
                     </div>
                     <span className="text-caption font-bold text-on-surface w-8 text-right">
@@ -277,8 +262,8 @@ export default function InspectionsListPage() {
                     <div className="flex items-center gap-2">
                       <div className="w-20 lg:w-24 bg-surface-container h-1.5 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-accent rounded-full"
-                          style={{ width: `${i.progreso}%` }}
+                          className="h-full rounded-full"
+                          style={{ width: `${i.progreso}%`, backgroundColor: '#0F1A5A' }}
                         />
                       </div>
                       <span className="text-caption font-bold text-on-surface w-8">

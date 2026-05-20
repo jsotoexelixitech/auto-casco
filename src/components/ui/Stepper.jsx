@@ -1,9 +1,9 @@
 import clsx from 'clsx'
 import Icon from './Icon'
 
-export default function Stepper({ steps, current = 0, onStepClick }) {
+export default function Stepper({ steps, current = 0, onStepClick, flat = false }) {
   return (
-    <div className="card p-3 sm:p-4">
+    <div className={flat ? 'py-2' : 'card p-3 sm:p-4'}>
       {/* Mobile: compact "x of n" + label */}
       <div className="sm:hidden">
         <div className="flex items-center justify-between mb-2">

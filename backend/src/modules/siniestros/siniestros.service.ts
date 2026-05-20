@@ -29,8 +29,9 @@ export class SiniestrosService {
   }
 
   async findOne(id: string, userId: string, role: string) {
-    const s = await this.prisma.siniestro.findUnique({
-      where: { id },
+    // Support lookup by database id OR by numero (e.g. "SIN-2026-001")
+    const s = await this.prisma.siniestro.findFirst({
+      where: { OR: [{ id }, { numero: id }] },
       include: {
         vehicle: true,
         policy: { select: { numero: true, holderId: true } },

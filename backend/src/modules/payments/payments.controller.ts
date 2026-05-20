@@ -8,50 +8,49 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { AuthUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CreateMethodDto, TopupDto } from './dto/payments.dto';
 import { PaymentsService } from './payments.service';
 
 @ApiTags('Payments')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly svc: PaymentsService) {}
 
   @Get()
   @ApiOperation({ summary: 'Historial de pagos del usuario' })
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.svc.findAll(user.sub, user.role);
+  findAll(@CurrentUser() user: AuthUser) {
+    return this.svc.findAll(user.id, user.role);
   }
 
   @Post('topup')
   @ApiOperation({ summary: 'Recargar saldo' })
-  topup(@CurrentUser() user: JwtPayload, @Body() dto: TopupDto) {
-    return this.svc.topup(user.sub, dto);
+  topup(@CurrentUser() user: AuthUser, @Body() dto: TopupDto) {
+    return this.svc.topup(user.id, dto);
   }
 
   @Get('methods')
   @ApiOperation({ summary: 'Listar métodos de pago' })
-  getMethods(@CurrentUser() user: JwtPayload) {
-    return this.svc.getMethods(user.sub);
+  getMethods(@CurrentUser() user: AuthUser) {
+    return this.svc.getMethods(user.id);
   }
 
   @Post('methods')
   @ApiOperation({ summary: 'Agregar método de pago' })
-  addMethod(@CurrentUser() user: JwtPayload, @Body() dto: CreateMethodDto) {
-    return this.svc.addMethod(user.sub, dto);
+  addMethod(@CurrentUser() user: AuthUser, @Body() dto: CreateMethodDto) {
+    return this.svc.addMethod(user.id, dto);
   }
 
   @Delete('methods/:id')
   @ApiOperation({ summary: 'Eliminar método de pago' })
-  removeMethod(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return this.svc.removeMethod(id, user.sub);
+  removeMethod(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.svc.removeMethod(id, user.id);
   }
 
   @Patch('methods/:id/primary')
   @ApiOperation({ summary: 'Marcar método como principal' })
-  setPrimary(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return this.svc.setPrimaryMethod(id, user.sub);
+  setPrimary(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.svc.setPrimaryMethod(id, user.id);
   }
 }

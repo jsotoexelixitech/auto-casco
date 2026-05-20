@@ -1,3 +1,4 @@
+import { PartialType } from '@nestjs/mapped-types';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsInt,
@@ -56,9 +57,4 @@ export class CreateVehicleDto {
   image?: string;
 }
 
-export class UpdateVehicleDto extends CreateVehicleDto {
-  @ApiPropertyOptional() declare placa: string;
-  @ApiPropertyOptional() declare marca: string;
-  @ApiPropertyOptional() declare modelo: string;
-  @ApiPropertyOptional() declare anio: number;
-}
+export class UpdateVehicleDto extends PartialType(CreateVehicleDto) {}

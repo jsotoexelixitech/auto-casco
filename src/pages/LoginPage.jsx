@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState(
     users.find((u) => u.id === (user?.id ?? users[0].id))?.email,
   )
-  const [password, setPassword] = useState('demo123')
+  const [password, setPassword] = useState('Demo1234!')
   const [loading, setLoading] = useState(false)
   const [showPwd, setShowPwd] = useState(false)
 
@@ -33,7 +33,11 @@ export default function LoginPage() {
       })
       navigate('/dashboard')
     } catch (err) {
-      toast.error(err?.message ?? 'Credenciales inválidas', { title: 'Error de acceso' })
+      const msg =
+        err?.status === 401 || err?.status === 400
+          ? 'Email o contraseña incorrectos. Usa Demo1234! para usuarios de prueba.'
+          : err?.message ?? 'Credenciales inválidas'
+      toast.error(msg, { title: 'Error de acceso' })
     } finally {
       setLoading(false)
     }
@@ -86,7 +90,7 @@ export default function LoginPage() {
           </h1>
           <p className="text-body-lg opacity-90">
             Captura guiada con IA, validación automática de piezas y trazabilidad
-            total — desde tu celular o desde la oficina del perito.
+            total — desde tu celular, en minutos y sin intermediarios.
           </p>
         </div>
 
@@ -185,7 +189,18 @@ export default function LoginPage() {
                 </div>
               </div>
               <div>
-                <label className="label">Contraseña</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label mb-0">Contraseña</label>
+                  <button
+                    type="button"
+                    onClick={() => setPassword('Demo1234!')}
+                    className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1"
+                    title="Auto-rellenar"
+                  >
+                    <Icon name="auto_fix_high" className="text-[14px]" />
+                    Demo: <code className="font-mono bg-primary-fixed px-1.5 py-0.5 rounded">Demo1234!</code>
+                  </button>
+                </div>
                 <div className="relative">
                   <Icon
                     name="lock"

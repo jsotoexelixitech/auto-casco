@@ -14,22 +14,22 @@ export default function AppLayout() {
   }, [location.pathname])
 
   return (
-    <div className="min-h-screen">
+    <div className="overflow-x-hidden" style={{ minHeight: '100dvh' }}>
       <SideNav open={open} onClose={() => setOpen(false)} />
-      <div className="md:ml-64 flex flex-col min-h-screen">
+      <div className="md:ml-64 flex flex-col overflow-x-hidden" style={{ minHeight: '100dvh' }}>
         <TopNav onMenuClick={() => setOpen((s) => !s)} />
         <main
-          className="flex-1 container-pad py-4 sm:py-5 md:py-6 lg:py-7 overflow-x-hidden"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)' }}
+          className="flex-1 container-pad py-3 sm:py-4 overflow-x-hidden"
+          style={{
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--main-bottom-pad, 88px))',
+          }}
         >
-          <div className="max-w-container mx-auto w-full">
-            <div key={location.pathname} className="route-enter">
-              <Outlet />
-            </div>
+          <div key={location.pathname} className="route-enter w-full">
+            <Outlet />
           </div>
         </main>
         <footer
-          className="hidden md:block py-4 text-center text-caption text-on-surface-variant border-t border-outline-variant/40"
+          className="hidden md:block py-2.5 text-center text-caption text-on-surface-variant border-t border-outline-variant/40"
         >
           © 2026 La Mundial de Seguros · 52 años contigo · Auto Casco · Demo
         </footer>

@@ -243,7 +243,7 @@ export default function SiniestroDetailPage() {
               Te llamará al +58 (414) ***-4567
             </p>
             <button className="btn-soft w-full">
-              <Icon name="phone" /> Llamar al perito
+              <Icon name="phone" /> Llamar a soporte
             </button>
           </div>
         </aside>
@@ -291,7 +291,7 @@ function buildTimeline(s) {
       body: 'El reporte fue registrado en el sistema.',
     },
     {
-      title: 'Asignación de perito',
+      title: 'Asignación de asesor',
       when: `${s.fecha} · +30 min`,
       done: s.avance >= 25,
       body: 'Miguel Azualde asignado al caso.',

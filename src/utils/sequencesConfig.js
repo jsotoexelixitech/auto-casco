@@ -1,0 +1,39 @@
+/**
+ * sequencesConfig.js
+ * Gestiona qué secuencias de fotos están habilitadas para la inspección.
+ * Se persiste en localStorage bajo la key 'ia_sequences'.
+ */
+import { PHOTO_SEQUENCES } from '../data/photoSequences'
+
+const LS_KEY = 'ia_sequences'
+
+/**
+ * Retorna el array de IDs de secuencias habilitadas guardado en localStorage.
+ * Si no hay configuración, devuelve todas las secuencias habilitadas.
+ */
+export function getEnabledSequenceIds() {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (raw) {
+      const ids = JSON.parse(raw)
+      if (Array.isArray(ids) && ids.length > 0) return ids
+    }
+  } catch { /* ignore */ }
+  // Por defecto: todas habilitadas
+  return PHOTO_SEQUENCES.map((s) => s.id)
+}
+
+/**
+ * Retorna solo las secuencias activas (habilitadas en configuración).
+ */
+export function getActiveSequences() {
+  const enabled = getEnabledSequenceIds()
+  return PHOTO_SEQUENCES.filter((s) => enabled.includes(s.id))
+}
+
+/**
+ * Guarda los IDs habilitados en localStorage.
+ */
+export function saveEnabledSequenceIds(ids) {
+  localStorage.setItem(LS_KEY, JSON.stringify(ids))
+}

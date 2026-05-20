@@ -15,6 +15,35 @@ export function BrandLogo({ size = 40, className }) {
 }
 
 /**
+ * BrandLockup — official combined logo (icon + wordmark) prepared for dark
+ * sidebars/headers. Uses the designer-provided `logo-lamundial-sidebar.png`
+ * which keeps proportions and typography exactly as in brand guidelines.
+ *
+ * Sizing — by default the lockup is fully responsive:
+ *   • Grows with its container width (`w-full`)
+ *   • Keeps aspect ratio via `object-contain`
+ *   • Caps height between 40px and 80px depending on viewport
+ * Pass an explicit `height` (number) to override and use a fixed pixel height
+ * (useful e.g. inside a compact mobile top-bar).
+ */
+export function BrandLockup({ height, className }) {
+  const usingFixed = typeof height === 'number'
+  return (
+    <img
+      src="/logo-lamundial-sidebar.png"
+      alt="La Mundial de Seguros"
+      className={clsx(
+        'object-contain select-none',
+        usingFixed ? 'shrink-0' : 'w-full h-auto max-h-[80px] min-h-[44px]',
+        className,
+      )}
+      style={usingFixed ? { height, width: 'auto' } : undefined}
+      draggable="false"
+    />
+  )
+}
+
+/**
  * Brand wordmark — "La Mundial / de Seguros"
  * Reproduces the official logotype using Playfair Display Italic
  * (web-safe substitute for Constantia Bold Italic) with small-caps.
@@ -45,16 +74,6 @@ export function BrandWordmark({ size = 'md', tone = 'dark', className }) {
       <p className={clsx(s.secondary, t.secondary, 'italic font-medium tracking-wide -mt-1')}>
         de Seguros
       </p>
-    </div>
-  )
-}
-
-export function BrandLockup({ size = 'md', tone = 'dark', className, withLogo = true, logoSize }) {
-  const logoSizes = { xs: 22, sm: 28, md: 36, lg: 44, xl: 64 }
-  return (
-    <div className={clsx('flex items-center gap-2.5', className)}>
-      {withLogo && <BrandLogo size={logoSize ?? logoSizes[size] ?? 36} />}
-      <BrandWordmark size={size} tone={tone} />
     </div>
   )
 }

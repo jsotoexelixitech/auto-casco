@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import Icon from '../ui/Icon'
-import { BrandLogo, BrandWordmark } from '../ui/Brand'
+import { BrandLockup } from '../ui/Brand'
 import { useAuth } from '../../context/AuthContext'
 import { useData } from '../../context/DataContext'
 import { ROLE_LABELS } from '../../data/mockData'
+import SearchPalette from './SearchPalette'
 
 export default function TopNav({ onMenuClick }) {
   const { user, logout } = useAuth()
@@ -104,18 +105,21 @@ export default function TopNav({ onMenuClick }) {
     markNotificationRead(n.id)
     setOpenNotif(false)
     if (n.icon === 'rule') navigate('/inspecciones')
-    else if (n.icon === 'timer_off') navigate('/cobertura')
-    else if (n.icon === 'campaign') navigate('/cobertura')
+    else if (n.icon === 'timer_off') navigate('/emision')
+    else if (n.icon === 'campaign') navigate('/emision')
     else navigate('/dashboard')
   }
 
   return (
     <header
-      className="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-b shadow-sm"
-      style={{ borderBottomColor: 'rgba(15, 26, 90, 0.10)' }}
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      className="sticky z-30 overflow-hidden border-b shadow-sm bg-white/90 backdrop-blur-xl"
+      style={{
+        /* top = zona ya cubierta por el div navy global (safe-area-inset-top) */
+        top: 'env(safe-area-inset-top, 0px)',
+        borderBottomColor: 'rgba(15, 26, 90, 0.10)',
+      }}
     >
-      <div className="flex items-center justify-between gap-2 container-pad h-14 sm:h-16 max-w-container mx-auto">
+      <div className="flex items-center justify-between gap-2 container-pad h-14 sm:h-16 w-full">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             onClick={onMenuClick}
@@ -125,9 +129,9 @@ export default function TopNav({ onMenuClick }) {
             <Icon name="menu" className="text-[24px] text-primary" />
           </button>
 
-          <Link to="/dashboard" className="md:hidden flex items-center gap-2 min-w-0">
-            <BrandLogo size={28} className="shrink-0" />
-            <BrandWordmark size="sm" className="truncate" />
+          <Link to="/dashboard" className="md:hidden flex items-center min-w-0">
+            <BrandLockup height={36} className="xs:hidden" />
+            <BrandLockup height={40} className="hidden xs:inline-block" />
           </Link>
 
           <button
@@ -152,14 +156,6 @@ export default function TopNav({ onMenuClick }) {
           >
             <Icon name="search" className="text-[22px]" />
           </button>
-
-          <Link
-            to="/cobertura"
-            className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-caption font-bold uppercase tracking-wider bg-secondary-fixed text-on-secondary-fixed-variant hover:brightness-95 transition"
-          >
-            <Icon name="bolt" className="text-[16px]" filled />
-            Comprar
-          </Link>
 
           <div ref={notifRef} className="relative">
             <button
@@ -224,7 +220,7 @@ export default function TopNav({ onMenuClick }) {
           </div>
 
           <Link
-            to="/configuracion"
+            to="/ajustes"
             className="hidden sm:inline-flex btn-icon"
             aria-label="Configuración"
           >
@@ -274,7 +270,7 @@ export default function TopNav({ onMenuClick }) {
                 <button
                   onClick={() => {
                     setOpenProfile(false)
-                    navigate('/configuracion')
+                    navigate('/ajustes')
                   }}
                   className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-container-low transition"
                 >
@@ -323,144 +319,3 @@ export default function TopNav({ onMenuClick }) {
   )
 }
 
-function SearchPalette({ search, setSearch, results, onClose, onSelect, getVehicle }) {
-  const QUICK_LINKS = [
-    { label: 'Nueva inspección', icon: 'add_a_photo', to: '/inspecciones/nueva' },
-    { label: 'Comprar días', icon: 'bolt', to: '/cobertura' },
-    { label: 'Recargar saldo', icon: 'account_balance_wallet', to: '/pagos' },
-    { label: 'Reportar siniestro', icon: 'car_crash', to: '/siniestros' },
-    { label: 'Centro de ayuda', icon: 'help', to: '/ayuda' },
-  ]
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 sm:pt-[12vh] animate-fade-in">
-      <div className="absolute inset-0 bg-brand-900/55 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-2xl card-elev2 p-0 overflow-hidden">
-        <div className="flex items-center gap-2 p-3 border-b border-outline-variant/40">
-          <Icon name="search" className="text-on-surface-variant text-[22px] ml-1" />
-          <input
-            autoFocus
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por número, placa, tipo…"
-            className="flex-1 bg-transparent border-0 outline-none text-body-lg text-on-surface placeholder:text-on-surface-variant/60"
-            style={{ fontSize: '16px' }}
-          />
-          <kbd className="hidden sm:inline-flex items-center text-[11px] text-on-surface-variant border border-outline-variant px-1.5 py-0.5 rounded">
-            ESC
-          </kbd>
-          <button onClick={onClose} className="btn-icon sm:hidden" aria-label="Cerrar">
-            <Icon name="close" />
-          </button>
-        </div>
-
-        <div className="max-h-[60vh] overflow-y-auto p-2">
-          {!search.trim() ? (
-            <div>
-              <p className="text-caption text-on-surface-variant uppercase tracking-wider px-2 py-1">
-                Acciones rápidas
-              </p>
-              {QUICK_LINKS.map((q) => (
-                <button
-                  key={q.to}
-                  onClick={() => onSelect(q.to)}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-low transition text-left"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-primary-fixed text-primary flex items-center justify-center shrink-0">
-                    <Icon name={q.icon} filled />
-                  </div>
-                  <span className="flex-1 font-semibold text-on-surface truncate">
-                    {q.label}
-                  </span>
-                  <Icon name="arrow_forward" className="text-on-surface-variant" />
-                </button>
-              ))}
-            </div>
-          ) : results?.total === 0 ? (
-            <div className="text-center p-8">
-              <Icon name="search_off" className="text-[40px] text-on-surface-variant" />
-              <p className="text-body-md text-on-surface-variant mt-1">
-                Sin resultados para "<strong>{search}</strong>"
-              </p>
-            </div>
-          ) : (
-            <>
-              {results.polRes.length > 0 && (
-                <ResultGroup label="Pólizas" icon="policy">
-                  {results.polRes.map((p) => {
-                    const v = getVehicle(p.vehicleId)
-                    return (
-                      <ResultItem
-                        key={p.id}
-                        title={`${p.numero} · ${v?.marca} ${v?.modelo}`}
-                        sub={`${v?.placa} · ${p.plan}`}
-                        onClick={() => onSelect(`/polizas/${p.id}`)}
-                      />
-                    )
-                  })}
-                </ResultGroup>
-              )}
-              {results.insRes.length > 0 && (
-                <ResultGroup label="Inspecciones" icon="verified">
-                  {results.insRes.map((i) => {
-                    const v = getVehicle(i.vehicleId)
-                    return (
-                      <ResultItem
-                        key={i.id}
-                        title={`${i.numero} · ${v?.marca} ${v?.modelo}`}
-                        sub={`${i.tipo} · ${i.estado}`}
-                        onClick={() => onSelect(`/inspecciones/${i.id}`)}
-                      />
-                    )
-                  })}
-                </ResultGroup>
-              )}
-              {results.sinRes.length > 0 && (
-                <ResultGroup label="Siniestros" icon="car_crash">
-                  {results.sinRes.map((s) => {
-                    const v = getVehicle(s.vehicleId)
-                    return (
-                      <ResultItem
-                        key={s.id}
-                        title={`${s.id} · ${s.tipo}`}
-                        sub={`${v?.placa ?? ''} · ${s.estado}`}
-                        onClick={() => onSelect(`/siniestros`)}
-                      />
-                    )
-                  })}
-                </ResultGroup>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function ResultGroup({ label, icon, children }) {
-  return (
-    <div className="mb-1">
-      <p className="text-caption text-on-surface-variant uppercase tracking-wider px-2 py-1 flex items-center gap-1">
-        <Icon name={icon} className="text-[14px]" />
-        {label}
-      </p>
-      {children}
-    </div>
-  )
-}
-
-function ResultItem({ title, sub, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-2 p-2.5 rounded-lg hover:bg-surface-container-low transition text-left"
-    >
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-on-surface truncate">{title}</p>
-        <p className="text-caption text-on-surface-variant truncate">{sub}</p>
-      </div>
-      <Icon name="north_east" className="text-on-surface-variant text-[18px]" />
-    </button>
-  )
-}

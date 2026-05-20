@@ -27,19 +27,27 @@ body,
   height: 100%;
 }
 
+html {
+  /* Bloquea scroll horizontal global */
+  overflow-x: hidden;
+  /* Fondo navy en el elemento raíz — iOS Safari muestra este color
+     en la zona del notch/status-bar y en el overscroll top */
+  background-color: #0F1A5A;
+}
+
 body {
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-  /* Brand-forward background: soft brand presence without overpowering content */
-  background-color: #EEF1F8;
-  background-image:
-    radial-gradient(ellipse at 20% 0%, rgba(15, 26, 90, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(232, 79, 81, 0.05) 0%, transparent 50%);
-  background-attachment: fixed;
+  /* Fondo: blanco levemente tintado en navy — profesional, sin pesar */
+  background-color: #F2F4F9;
   color: #091133;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'kern', 'liga', 'cv05';
   overscroll-behavior-y: none;
+  /* Bloquea scroll lateral en todo el cuerpo */
+  overflow-x: hidden;
+  /* Momentum scrolling en iOS para los contenedores con overflow-y */
+  -webkit-overflow-scrolling: touch;
 }
 
 ::selection {
@@ -126,48 +134,87 @@ textarea {
 }
 
 @layer components {
-  /* ── Cards: La Mundial brand-forward — visible navy presence ── */
   .card {
-    @apply rounded-xl relative;
-    background-color: #ffffff;
-    background-image: linear-gradient(180deg, #ffffff 0%, #f6f8fd 100%);
-    border: 1px solid rgba(15, 26, 90, 0.10);
-    box-shadow:
-      0 1px 0 rgba(15, 26, 90, 0.05),
-      0 6px 22px rgba(15, 26, 90, 0.10),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    @apply bg-white rounded-xl shadow-elev-1 border border-outline-variant/40 relative;
   }
   .card-elev2 {
-    @apply rounded-xl relative;
-    background-color: #ffffff;
-    background-image: linear-gradient(180deg, #ffffff 0%, #f1f4fb 100%);
-    border: 1px solid rgba(15, 26, 90, 0.14);
-    box-shadow:
-      0 2px 6px rgba(15, 26, 90, 0.08),
-      0 14px 36px rgba(15, 26, 90, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    @apply bg-white rounded-xl shadow-elev-2 border border-outline-variant/40 relative;
   }
   .card-glass {
-    @apply rounded-xl bg-white/70 backdrop-blur-xl border border-white/50 shadow-elev-1;
+    @apply rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-elev-1;
   }
-  /* Accent ribbon — top brand-colored line for important cards */
+
+  /* ──────────────────────────────────────────────────────────────────
+     SAFE-CLIP CARD — prevents the well-known Chromium/WebKit bug where
+     `overflow:hidden + border-radius` lose their clipping mask while a
+     descendant is being transformed (scale/translate). Symptom: corners
+     briefly flicker SQUARE during hover transitions.
+
+     Applies four hardening rules:
+       1. `isolate` → forces its own stacking context.
+       2. `transform: translateZ(0)` → forces a dedicated GPU layer.
+       3. `will-change: transform` → tells the compositor we'll animate.
+       4. `mask-image` of a solid color → forces the rasterizer to ALWAYS
+          clip against the rounded shape, even mid-transform. Most robust.
+
+     IMPORTANT: button elements also get their default `appearance` and
+     `border` reset so the user-agent's square focus rectangle never
+     bleeds through the rounded mask.
+     ────────────────────────────────────────────────────────────────── */
+  .safe-clip {
+    isolation: isolate;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+                mask-image: radial-gradient(white, black);
+  }
+  button.safe-clip,
+  a.safe-clip {
+    -webkit-appearance: none;
+            appearance: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+  }
+  button.safe-clip:focus,
+  a.safe-clip:focus {
+    outline: none;
+  }
+  button.safe-clip:focus-visible,
+  a.safe-clip:focus-visible {
+    outline: 2px solid #0F1A5A;
+    outline-offset: 3px;
+  }
+
+  /* Barra superior brand sólida — 3 variantes de color (sin gradientes) */
   .card-accent::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #0F1A5A 0%, #162A7F 50%, #E84F51 100%);
+    background-color: #E84F51;   /* Rojo Imperial */
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
   }
-  /* Brand-navy card variant — for hero / promo sections */
-  .card-brand {
-    @apply rounded-xl relative overflow-hidden text-white;
-    background: linear-gradient(135deg, #091133 0%, #0F1A5A 60%, #162A7F 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow:
-      0 2px 6px rgba(9, 17, 51, 0.20),
-      0 14px 36px rgba(9, 17, 51, 0.28);
+  .card-accent-navy::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background-color: #0F1A5A;   /* Azul Pennsylvania */
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+  }
+  .card-accent-silver::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background-color: #ACACAC;   /* Plata */
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
   }
 
   /* Buttons — touch-target friendly (≥44px) */
@@ -216,7 +263,7 @@ textarea {
 
   /* Section utility — fluid horizontal padding */
   .container-pad {
-    @apply px-3 sm:px-5 md:px-6 lg:px-8;
+    @apply px-3 sm:px-4 md:px-5 lg:px-6;
   }
 
   /* Visually hidden — for accessible labels */
@@ -231,6 +278,11 @@ textarea {
     white-space: nowrap;
     border: 0;
   }
+}
+
+/* SideNav subtle hover — 8% white on dark navy */
+.hover\:bg-white\/8:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Route transition */
@@ -286,7 +338,7 @@ textarea {
 
 /* Toast stack — sits above mobile bottom nav, then bottom-right on tablet+ */
 .toast-stack {
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--main-bottom-pad, 88px));
 }
 @media (min-width: 768px) {
   .toast-stack {
@@ -295,9 +347,23 @@ textarea {
 }
 
 /* ── Shared layout token: mobile bottom nav height ─────────────────────────── */
-/* BottomNav: ~56px items + 16px padding = 72px. Adjust this one value if nav changes. */
+/* BottomNav: ~56px items + 8px padding top/bottom = 72px portrait,
+   ~44px items + 8px padding = ~52px landscape. */
 :root {
   --bottom-nav-h: 72px;
+  --main-bottom-pad: 88px;   /* mobile reserves space for BottomNav */
+}
+@media (min-width: 768px) {
+  :root {
+    --main-bottom-pad: 24px; /* desktop: no BottomNav, slim padding */
+  }
+}
+/* Landscape phone: BottomNav is shorter */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --bottom-nav-h: 52px;
+    --main-bottom-pad: 60px;
+  }
 }
 
 /* Checkout sticky bar — above BottomNav on mobile, true bottom on md+ */
@@ -314,4 +380,9 @@ textarea {
    Desktop positioning is handled via Tailwind md:sticky md:bottom-0 md:inset-auto */
 .wizard-footer-sticky {
   bottom: calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-h));
+}
+@media (min-width: 768px) {
+  .wizard-footer-sticky {
+    bottom: 0;   /* desktop: sticky resets this */
+  }
 }

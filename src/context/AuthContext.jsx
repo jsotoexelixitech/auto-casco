@@ -80,7 +80,7 @@ export function AuthProvider({ children }) {
   )
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
   return ctx
@@ -103,8 +103,6 @@ function mapApiUser(u) {
 
 function roleLabel(role) {
   const map = {
-    admin: 'Administrador',
-    perito: 'Perito',
     asegurado: 'Asegurado',
     intermediario: 'Intermediario',
   }

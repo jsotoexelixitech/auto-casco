@@ -29,17 +29,12 @@ export default function SiniestrosPage() {
         }
       />
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
-        <StatCard icon="car_crash" label="Total" value={siniestros.length} tone="deep" />
-        <StatCard icon="pending_actions" label="En análisis" value={enAnalisis} tone="warning" />
-        <StatCard icon="paid" label="Monto" value={`$${total.toLocaleString()}`} />
-        <StatCard
-          icon="trending_down"
-          label="Aprobación"
-          value="92%"
-          tone="success"
-          trend={{ dir: 'up', value: '+4%' }}
-        />
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5">
+        <StatCard icon="car_crash" label="Total" value={siniestros.length} tone="navy-deep" />
+        <StatCard icon="pending_actions" label="En análisis" value={enAnalisis} tone="navy-soft" />
+        <StatCard icon="paid" label="Monto" value={`$${total.toLocaleString()}`} tone="silver" />
+        <StatCard icon="trending_down" label="Aprobación" value="92%"
+          tone="silver-dark" trend={{ dir: 'up', value: '+4%' }} />
       </section>
 
       {siniestros.length === 0 ? (
@@ -78,8 +73,8 @@ export default function SiniestrosPage() {
                   </div>
                   <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-accent rounded-full transition-all"
-                      style={{ width: `${s.avance}%` }}
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${s.avance}%`, backgroundColor: '#0F1A5A' }}
                     />
                   </div>
                 </div>

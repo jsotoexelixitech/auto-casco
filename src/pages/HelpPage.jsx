@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastContext'
 const FAQS = [
   {
     q: '¿Cómo funciona la inspección auto-gestionable?',
-    a: 'Recibes un enlace seguro en tu móvil, capturas las fotos guiadas con IA y la plataforma valida automáticamente la calidad y completitud antes de enviarla al perito.',
+    a: 'Recibes un enlace seguro en tu móvil, capturas las fotos guiadas con IA y la plataforma valida automáticamente la calidad y completitud. El análisis se realiza de forma automática.',
   },
   {
     q: '¿Qué documentos necesito para emitir una póliza?',
@@ -48,7 +48,7 @@ const QUICK_ACTIONS = [
   },
   {
     icon: 'videocam',
-    title: 'Videollamada perito',
+    title: 'Asistencia por videollamada',
     body: 'Resuelve dudas con un experto',
     cta: 'Solicitar',
     action: 'video',
@@ -93,7 +93,7 @@ export default function HelpPage() {
             key={q.action}
             onClick={() => handleQuickAction(q.action)}
             className={clsx(
-              'card p-4 sm:p-5 flex flex-col items-start hover:-translate-y-0.5 transition-all hover:shadow-elev-2 cursor-pointer min-w-0 text-left active:scale-[0.99] group border-2',
+              'card p-4 sm:p-5 flex flex-col items-start hover:-translate-y-0.5 transition-[transform,box-shadow,border-color] duration-300 ease-out hover:shadow-elev-2 cursor-pointer min-w-0 text-left active:scale-[0.99] group border-2',
               activeSection === q.action ? 'border-primary bg-primary-fixed/10' : 'border-transparent',
             )}
           >
@@ -151,7 +151,7 @@ export default function HelpPage() {
                   <Icon name="videocam" className="text-[20px]" filled />
                 </div>
                 <div>
-                  <h3 className="text-headline-md text-on-surface">Videollamada con perito</h3>
+                  <h3 className="text-headline-md text-on-surface">Asistencia por videollamada</h3>
                   <p className="text-caption text-on-surface-variant">
                     Te conectamos con un experto en menos de 24h.
                   </p>
@@ -357,7 +357,7 @@ function VideoCallSection({ onClose }) {
   const toast = useToast()
 
   const submit = () => {
-    setScheduled({ ...form, perito: 'Miguel Azualde' })
+    setScheduled({ ...form, asesor: 'Miguel Azualde' })
     toast.success('Tu videollamada fue agendada. Te enviamos confirmación al correo.', {
       title: '¡Listo!',
     })
@@ -372,7 +372,7 @@ function VideoCallSection({ onClose }) {
         <div>
           <h4 className="text-headline-md text-on-surface mb-1">Videollamada confirmada</h4>
           <p className="text-body-md text-on-surface-variant">
-            Te conectaremos con <strong>{scheduled.perito}</strong> el{' '}
+            Te conectaremos con <strong>{scheduled.asesor}</strong> el{' '}
             <strong>{scheduled.fecha}</strong> a las <strong>{scheduled.hora}</strong>.
           </p>
         </div>
@@ -515,7 +515,7 @@ function agentReply(text) {
     return 'Para activar cobertura ve a Cobertura → elige el plan y los días → confirma con tu saldo o tarjeta. ¿Quieres que te lleve a esa pantalla?'
   }
   if (lower.includes('siniestro') || lower.includes('choque') || lower.includes('reportar')) {
-    return 'Lamento mucho lo ocurrido. Puedes reportar el siniestro desde Siniestros → "Reportar Siniestro". Un perito te llamará en menos de 30 min.'
+    return 'Lamento mucho lo ocurrido. Puedes reportar el siniestro desde Siniestros → "Reportar Siniestro". Te contactaremos en menos de 30 minutos.'
   }
   if (lower.includes('plan') || lower.includes('cambiar')) {
     return 'Tenemos 3 planes (Básico, Estándar y Premium). Te paso el comparador en la sección de Cobertura — ¿cuál te interesa más?'

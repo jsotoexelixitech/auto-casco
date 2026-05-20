@@ -63,6 +63,7 @@ export class BuyDaysDto {
   days!: number;
 
   @ApiProperty({ example: 62.3, description: 'Total a debitar' })
+  @IsNumber()
   @Min(0)
   total!: number;
 }

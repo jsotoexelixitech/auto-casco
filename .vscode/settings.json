@@ -1,0 +1,8 @@
+{
+  "terminal.integrated.defaultProfile.windows": "PowerShell 7",
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "terminal.integrated.env.windows": {
+    "AC_PROJECT_ROOT": "${workspaceFolder}",
+    "VITE_API_URL": "http://192.168.10.215:3003/api/v1"
+  }
+}

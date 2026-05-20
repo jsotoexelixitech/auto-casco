@@ -15,7 +15,7 @@ import {
 } from './dto/create-vehicle.dto';
 import { VehiclesService } from './vehicles.service';
 
-@ApiTags('vehicles')
+@ApiTags('Vehicles')
 @ApiBearerAuth('JWT-auth')
 @Controller('vehicles')
 export class VehiclesController {
@@ -55,3 +55,4 @@ export class VehiclesController {
     return this.service.remove(id, user.id, user.role);
   }
 }
+

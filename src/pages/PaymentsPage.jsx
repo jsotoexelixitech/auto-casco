@@ -142,20 +142,22 @@ export default function PaymentsPage() {
         subtitle="Recarga tu saldo y revisa todo el historial de movimientos."
       />
 
-      <section className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-5 sm:mb-6">
-        <StatCard icon="payments" label="Movimientos" value={pagos.length} tone="deep" />
-        <StatCard icon="trending_up" label="Ingresos" value={`$${totalIn.toFixed(0)}`} tone="success" />
-        <StatCard icon="trending_down" label="Egresos" value={`$${totalOut.toFixed(0)}`} tone="accent" />
+      <section className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-5">
+        <StatCard icon="payments" label="Movimientos" value={pagos.length} tone="navy-deep" />
+        <StatCard icon="trending_up" label="Ingresos" value={`$${totalIn.toFixed(0)}`} tone="navy-soft" />
+        <StatCard icon="trending_down" label="Egresos" value={`$${totalOut.toFixed(0)}`} tone="silver" />
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <aside className="lg:order-2 flex flex-col gap-4">
-          <div className="card-elev2 p-4 sm:p-5 bg-gradient-brand-soft text-on-primary relative overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-40 h-40 bg-accent-500/30 rounded-full blur-3xl" />
+          <div
+            className="rounded-xl p-4 sm:p-5 text-white relative overflow-hidden"
+            style={{ backgroundColor: '#091133', borderTop: '3px solid #ACACAC' }}
+          >
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
-                <Icon name="account_balance_wallet" filled className="text-accent-300" />
-                <h3 className="text-headline-md">Recargar saldo</h3>
+                <Icon name="account_balance_wallet" filled className="text-white/80" />
+                <h3 className="text-headline-md text-white">Recargar saldo</h3>
               </div>
               <p className="opacity-80 mb-3 text-body-md">
                 Añade fondos para activar coberturas instantáneamente.
@@ -165,10 +167,9 @@ export default function PaymentsPage() {
                   <button
                     key={a}
                     onClick={() => setTopupAmount(a)}
-                    className={`min-h-[44px] rounded-lg text-label-md font-bold transition active:scale-95 ${
-                      topupAmount === a
-                        ? 'bg-gradient-accent text-white'
-                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    style={topupAmount === a ? { backgroundColor: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.60)' } : {}}
+                    className={`min-h-[44px] rounded-lg text-label-md font-bold transition active:scale-95 text-white ${
+                      topupAmount === a ? '' : 'bg-white/10 hover:bg-white/20'
                     }`}
                   >
                     ${a}

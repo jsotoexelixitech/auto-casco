@@ -15,7 +15,7 @@ import { CurrentUser, AuthUser } from '../../common/decorators/current-user.deco
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
-@ApiTags('users')
+@ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(RolesGuard)
 @Controller('users')
@@ -58,3 +58,4 @@ export class UsersController {
     return this.users.deactivate(id);
   }
 }
+

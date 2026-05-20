@@ -17,7 +17,7 @@ import {
 } from './dto/create-inspection.dto';
 import { InspectionsService } from './inspections.service';
 
-@ApiTags('inspections')
+@ApiTags('Inspections')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(RolesGuard)
 @Controller('inspections')
@@ -59,3 +59,4 @@ export class InspectionsController {
     return this.service.approve(id, user.id, user.role);
   }
 }
+

@@ -1,393 +1,277 @@
 import { Link, useNavigate } from 'react-router-dom'
-import clsx from 'clsx'
 import PageHeader from '../components/ui/PageHeader'
-import StatCard from '../components/ui/StatCard'
-import StatusChip from '../components/ui/StatusChip'
 import Icon from '../components/ui/Icon'
+import StatusChip from '../components/ui/StatusChip'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
+import { PLANES } from '../utils/planEngine'
+
+const C = {
+  navy:    '#0F1A5A',
+  deep:    '#091133',
+  soft:    '#162A7F',
+  red:     '#E84F51',
+  silver:  '#ACACAC',
+  silverD: '#777777',
+  silverL: '#E8EAED',
+}
+
+// Mapeo plan id → datos del plan
+const PLAN_MAP = {
+  cobertura_amplia: PLANES.COBERTURA_AMPLIA,
+  rcv:              PLANES.RCV,
+  perdida_total:    PLANES.PERDIDA_TOTAL,
+}
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { policies, vehicles, inspections, activities, getVehicle } = useData()
+  const { policies, inspections, activities, getVehicle } = useData()
   const navigate = useNavigate()
 
-  const isPerito = user?.role === 'perito' || user?.role === 'admin'
-  const myPolicy = policies[0]
-  const myVehicle = getVehicle(myPolicy?.vehicleId)
-
-  const inspectionsToValidate = inspections.filter(
-    (i) =>
-      i.estado === 'Pendiente de Validación' || i.estado === 'En Progreso',
-  )
+  const myPolicy    = policies[0]
+  const myVehicle   = getVehicle(myPolicy?.vehicleId)
+  const lastInsp    = inspections?.slice()
+    .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion))[0]
+  const planActual  = myPolicy?.plan
+    ? Object.values(PLANES).find((p) => p.nombre === myPolicy.plan)
+    : null
 
   return (
     <>
       <PageHeader
         eyebrow={`Hola, ${user?.name?.split(' ')[0] ?? 'Usuario'}`}
         title="Panel de Control"
-        subtitle={
-          isPerito
-            ? 'Resumen ejecutivo de inspecciones, pólizas y siniestros activos.'
-            : 'Resumen de tu póliza, cobertura y opciones rápidas.'
-        }
+        subtitle="Inspección vehicular con IA · Plan de seguro según el estado de tu vehículo."
         actions={
-          <>
-            <Link to="/inspecciones/nueva" className="btn-accent">
-              <Icon name="add_a_photo" className="text-[20px]" />
-              <span className="hidden sm:inline">Nueva</span> Inspección
-            </Link>
-            <Link to="/cobertura" className="btn-ghost hidden sm:inline-flex">
-              <Icon name="bolt" /> Comprar Días
-            </Link>
-          </>
+          <Link to="/inspecciones/nueva" className="btn-accent">
+            <Icon name="add_a_photo" className="text-[20px]" />
+            <span className="hidden sm:inline">Iniciar</span> Inspección
+          </Link>
         }
       />
 
-      {/* ── Welcome hero ─────────────────────────────────────────────────── */}
-      {!isPerito && myPolicy && (
-        <div className="rounded-2xl bg-gradient-brand text-on-primary p-4 sm:p-5 relative overflow-hidden mb-5 sm:mb-6">
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-accent-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] uppercase tracking-widest opacity-70 mb-0.5">
-                {new Date().toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
-              <h2 className="text-headline-lg sm:text-display-sm font-bold leading-tight truncate">
-                {getGreeting()}, {user?.name?.split(' ')[0]}
-              </h2>
-              <p className="opacity-80 mt-1 text-caption sm:text-body-md">
-                Tu póliza <span className="font-mono font-bold">{myPolicy.numero}</span> está{' '}
-                <span className="font-bold">{myPolicy.estado?.toLowerCase()}</span>.{' '}
-                Te quedan <span className="font-bold">{myPolicy.diasRestantes} días</span> de cobertura.
-              </p>
-            </div>
-            <Link
-              to="/cobertura"
-              className="shrink-0 self-start sm:self-center bg-white/15 hover:bg-white/25 active:scale-95 transition rounded-xl px-5 py-2.5 font-bold text-label-md flex items-center gap-2 min-h-[44px]"
-            >
-              <Icon name="bolt" /> Comprar Días
-            </Link>
-          </div>
+      {/* ── Banner hero — CTA principal ─────────────────────────────────── */}
+      <div
+        className="rounded-2xl text-white p-5 sm:p-6 mb-4 flex flex-col sm:flex-row sm:items-center gap-4 relative overflow-hidden"
+        style={{ backgroundColor: C.deep }}
+      >
+        <span className="absolute inset-y-0 left-0 w-1.5 rounded-l-2xl" style={{ backgroundColor: C.silver }} />
+        <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full opacity-10"
+          style={{ backgroundColor: C.soft }} />
+        <div className="pl-2 flex-1 min-w-0 relative z-10">
+          <p className="text-[11px] uppercase tracking-widest text-white/60 mb-1">
+            {new Date().toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+          <h2 className="text-headline-lg sm:text-display-sm font-bold leading-tight">
+            {getGreeting()}, {user?.name?.split(' ')[0]}
+          </h2>
+          <p className="text-white/70 mt-1 text-body-md">
+            Fotografía tu vehículo y la IA determina automáticamente el plan de seguro que puedes contratar.
+          </p>
         </div>
-      )}
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0 relative z-10">
+          <Link to="/inspecciones/nueva" className="btn-accent">
+            <Icon name="photo_camera" /> Nueva Inspección
+          </Link>
+          <Link to="/emision"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-label-md text-white border-2 border-white/40 hover:bg-white/15 active:bg-white/20 transition-all min-h-[44px]">
+            <Icon name="rocket_launch" className="text-[18px]" /> Emisión
+          </Link>
+        </div>
+      </div>
 
-      {/* KPI grid — 2 col on mobile, scales up */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
-        {isPerito ? (
-          <>
-            <StatCard
-              icon="verified"
-              label="Inspecciones"
-              value={inspections.length}
-              hint={`${inspectionsToValidate.length} requieren acción`}
-              tone="deep"
-              onClick={() => navigate('/inspecciones')}
-            />
-            <StatCard
-              icon="policy"
-              label="Pólizas Activas"
-              value={policies.filter((p) => p.estado === 'Activa').length}
-              hint={`de ${policies.length} totales`}
-              trend={{ dir: 'up', value: '+12%' }}
-              tone="primary"
-              onClick={() => navigate('/polizas')}
-            />
-            <StatCard
-              icon="directions_car"
-              label="Vehículos"
-              value={vehicles.length}
-              hint="Asegurados"
-              tone="info"
-            />
-            <StatCard
-              icon="auto_awesome"
-              label="IA Confianza"
-              value="98%"
-              hint="Validación automática"
-              trend={{ dir: 'up', value: '+1.2%' }}
-              tone="success"
-            />
-          </>
-        ) : (
-          <>
-            <StatCard
-              icon="event_available"
-              label="Días Restantes"
-              value={myPolicy?.diasRestantes ?? 0}
-              hint={`de ${myPolicy?.diasContratados ?? 0}`}
-              tone="deep"
-              onClick={() => navigate('/cobertura')}
-            />
-            <StatCard
-              icon="account_balance_wallet"
-              label="Saldo"
-              value={`$${(myPolicy?.saldo ?? 0).toFixed(2)}`}
-              hint="Disponible"
-              tone="success"
-            />
-            <StatCard
-              icon="shield"
-              label="Plan Activo"
-              value={myPolicy?.plan ?? '—'}
-              hint={myPolicy?.modalidad}
-            />
-            <StatCard
-              icon="savings"
-              label="Ahorro 30d"
-              value="$45.00"
-              hint="vs. tradicional"
-              trend={{ dir: 'up', value: '18%' }}
-              tone="success"
-            />
-          </>
-        )}
-      </section>
-
-      {/* Vehicle hero + quick actions */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5 sm:mb-6">
-        <div className="lg:col-span-2 card p-3 sm:p-5 flex flex-col md:flex-row gap-3 md:gap-5 items-stretch">
-          <div className="md:w-[55%] aspect-[16/10] sm:aspect-[16/9] md:aspect-[4/3] rounded-xl overflow-hidden relative bg-surface-container shrink-0">
-            {myVehicle && (
-              <img
-                src={myVehicle.image}
-                alt={`${myVehicle.marca} ${myVehicle.modelo}`}
-                className="w-full h-full object-cover"
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-            <div className="absolute top-2 left-2">
-              <StatusChip status={myPolicy?.estado} size="sm" />
-            </div>
-            <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between text-white gap-1">
-              <div className="bg-black/50 backdrop-blur-md rounded-lg px-2.5 py-1 min-w-0">
-                <p className="text-[10px] opacity-90 uppercase tracking-wider">Placa</p>
-                <p className="font-bold tracking-wider text-sm truncate">{myVehicle?.placa}</p>
-              </div>
-              <div className="bg-black/50 backdrop-blur-md rounded-lg px-2.5 py-1 text-right min-w-0">
-                <p className="text-[10px] opacity-90 uppercase tracking-wider">Póliza</p>
-                <p className="font-bold text-sm truncate">#{myPolicy?.numero}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex-1 flex flex-col justify-between min-w-0">
-            <div>
-              <p className="text-caption text-on-surface-variant uppercase tracking-wider font-bold">
-                Vehículo principal
-              </p>
-              <h3 className="text-headline-md text-on-surface mt-1 truncate">
-                {myVehicle?.marca} {myVehicle?.modelo} {myVehicle?.anio}
-              </h3>
-              <p className="text-body-md text-on-surface-variant truncate">
-                {myVehicle?.version} · {myVehicle?.color}
-              </p>
-              <div className="bg-surface-container-low rounded-xl p-3 sm:p-4 mt-3 border border-outline-variant/40">
-                <p className="text-caption text-on-surface-variant uppercase tracking-wider mb-0.5">
-                  Días restantes
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-display-lg font-bold text-primary leading-none">
-                    {myPolicy?.diasRestantes ?? 0}
-                  </span>
-                  <span className="text-body-md text-on-surface-variant">
-                    / {myPolicy?.diasContratados ?? 0}
-                  </span>
+      {/* ── Vehículo + plan actual ───────────────────────────────────────── */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        {/* Card vehículo */}
+        {myVehicle && (
+          <div className="lg:col-span-2 card p-3 sm:p-4 flex flex-col md:flex-row gap-3 md:gap-4"
+            style={{ borderTop: `3px solid ${C.navy}` }}>
+            <div className="md:w-[52%] aspect-[16/10] md:aspect-auto md:min-h-[180px] rounded-xl overflow-hidden relative bg-surface-container shrink-0">
+              <img src={myVehicle.image} alt={`${myVehicle.marca} ${myVehicle.modelo}`}
+                className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              {myPolicy && (
+                <div className="absolute top-2 left-2">
+                  <StatusChip status={myPolicy.estado} size="sm" />
                 </div>
-                <div className="w-full bg-surface-container-high h-2 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className="bg-gradient-accent h-full rounded-full transition-all"
-                    style={{
-                      width: `${Math.min(100, ((myPolicy?.diasRestantes ?? 0) / (myPolicy?.diasContratados || 1)) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate('/cobertura')}
-              className="btn-accent w-full mt-3"
-            >
-              <Icon name="shopping_cart" /> Comprar Días Ahora
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-col xs:flex-row lg:flex-col gap-3 sm:gap-4">
-          <BentoAction
-            tone="primary"
-            icon="calendar_month"
-            title="Comprar Días"
-            body="Activa tu seguro por el tiempo que necesites."
-            to="/cobertura"
-          />
-          <BentoAction
-            tone="light"
-            icon="account_balance_wallet"
-            title="Recargar Saldo"
-            body="Añade fondos para futuras compras automáticas."
-            to="/pagos"
-          />
-        </div>
-      </section>
-
-      {/* Lower row */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-headline-md text-on-surface">Uso Mensual</h3>
-            <StatusChip
-              tone="success"
-              icon="trending_up"
-              dot={false}
-              status="Activo"
-              size="sm"
-            >
-              Activo
-            </StatusChip>
-          </div>
-          <div>
-            <div className="flex justify-between text-label-md mb-1">
-              <span className="text-on-surface-variant">Días utilizados</span>
-              <span className="text-on-surface font-bold">12 / 30</span>
-            </div>
-            <div className="w-full bg-surface-container h-2.5 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: '40%' }}
-              />
-            </div>
-          </div>
-
-          {/* Mini bar chart */}
-          <div className="mt-4 grid grid-cols-12 gap-0.5 sm:gap-1 h-20 sm:h-24 items-end">
-            {[18, 22, 30, 14, 38, 26, 55, 42, 28, 44, 60, 33].map((h, i) => (
-              <div
-                key={i}
-                className={clsx(
-                  'rounded-t-md transition-all hover:scale-y-105 origin-bottom',
-                  i === 10 ? 'bg-gradient-accent' : 'bg-primary/15',
+              )}
+              <div className="absolute bottom-2 left-2 right-2 flex justify-between text-white gap-1">
+                <span className="bg-black/55 backdrop-blur-sm rounded-lg px-2 py-1 text-xs font-bold">
+                  {myVehicle.placa}
+                </span>
+                {myPolicy && (
+                  <span className="bg-black/55 backdrop-blur-sm rounded-lg px-2 py-1 text-xs font-mono">
+                    #{myPolicy.numero}
+                  </span>
                 )}
-                style={{ height: `${h}%` }}
-                title={`Mes ${i + 1}: ${h}%`}
-              />
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-outline-variant/50">
-            <div>
-              <p className="text-caption text-on-surface-variant uppercase">Ahorro</p>
-              <p className="text-headline-md text-primary font-bold">$45</p>
+              </div>
             </div>
-            <div>
-              <p className="text-caption text-on-surface-variant uppercase">Sin uso</p>
-              <p className="text-headline-md text-on-surface font-bold">18d</p>
-            </div>
-            <div>
-              <p className="text-caption text-on-surface-variant uppercase">Costo prom.</p>
-              <p className="text-headline-md text-on-surface font-bold">$3.75</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-headline-md text-on-surface">Actividad Reciente</h3>
-            <Link to="/pagos" className="text-label-md text-primary hover:underline">
-              Ver todo
-            </Link>
-          </div>
-          <div className="flex flex-col">
-            {activities.slice(0, 5).map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center gap-3 p-2 hover:bg-surface-container-low rounded-lg transition"
-              >
-                <div
-                  className={clsx(
-                    'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
-                    a.tone === 'primary' && 'bg-primary-fixed text-primary',
-                    a.tone === 'accent' && 'bg-secondary-fixed text-on-secondary-fixed-variant',
-                    a.tone === 'success' && 'bg-success-container text-on-success-container',
-                    a.tone === 'error' && 'bg-error-container text-on-error-container',
-                  )}
-                >
-                  <Icon name={a.icon} className="text-[20px]" filled />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-label-md text-on-surface truncate">{a.title}</p>
-                  <p className="text-caption text-on-surface-variant truncate">
-                    {a.subtitle}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  {a.amount !== undefined && (
-                    <p
-                      className={clsx(
-                        'text-label-md font-bold',
-                        a.amount > 0 ? 'text-success' : 'text-on-surface',
-                      )}
-                    >
-                      {a.amount > 0 ? '+' : ''}
-                      {a.amount}$
-                    </p>
-                  )}
-                  <p className="text-caption text-on-surface-variant whitespace-nowrap">
-                    {a.when}
-                  </p>
+            <div className="flex-1 flex flex-col justify-between min-w-0 pt-1">
+              <div>
+                <p className="text-caption text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Vehículo principal
+                </p>
+                <h3 className="text-headline-md font-bold truncate" style={{ color: C.navy }}>
+                  {myVehicle.marca} {myVehicle.modelo} {myVehicle.anio}
+                </h3>
+                <p className="text-body-md text-on-surface-variant truncate mb-3">
+                  {myVehicle.version} · {myVehicle.color}
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-caption">
+                  <VehInfo label="Placa" value={myVehicle.placa} mono />
+                  <VehInfo label="Serial" value={myVehicle.serial?.slice(0, 10) + '…'} mono />
+                  <VehInfo label="Color" value={myVehicle.color} />
+                  <VehInfo label="Km" value={myVehicle.kilometraje?.toLocaleString('es-VE')} />
                 </div>
               </div>
-            ))}
+              <Link to="/inspecciones/nueva" className="btn-primary w-full mt-3">
+                <Icon name="add_a_photo" /> Inspeccionar este vehículo
+              </Link>
+            </div>
           </div>
+        )}
+
+        {/* Plan actual o CTA para inspeccionar */}
+        <div className="flex flex-col gap-3">
+          {planActual ? (
+            <PlanCard plan={planActual} />
+          ) : (
+            <div className="card p-4 sm:p-5 flex flex-col items-center text-center gap-3 h-full justify-center"
+              style={{ borderTop: `3px solid ${C.silver}` }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ backgroundColor: '#EEF0FA', color: C.navy }}>
+                <Icon name="policy" className="text-[32px]" filled />
+              </div>
+              <div>
+                <p className="font-bold text-on-surface text-headline-md">Sin plan activo</p>
+                <p className="text-caption text-on-surface-variant mt-1 leading-snug">
+                  Realiza una inspección para que la IA evalúe el estado de tu vehículo y te indique los planes disponibles.
+                </p>
+              </div>
+              <Link to="/inspecciones/nueva" className="btn-accent w-full">
+                <Icon name="auto_awesome" /> Obtener mi plan
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Inspections to validate (perito) */}
-      {isPerito && inspectionsToValidate.length > 0 && (
-        <section className="mt-5 sm:mt-6">
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <h3 className="text-headline-md text-on-surface">
-              Atención requerida
-            </h3>
-            <Link to="/inspecciones" className="text-label-md text-primary hover:underline whitespace-nowrap">
-              Ver todas →
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {inspectionsToValidate.slice(0, 3).map((i) => {
-              const v = getVehicle(i.vehicleId)
-              return (
-                <Link
-                  to={`/inspecciones/${i.id}`}
-                  key={i.id}
-                  className="card p-4 group hover:border-primary hover:-translate-y-0.5 transition-all"
-                >
-                  <div className="flex items-center justify-between mb-2 gap-2">
-                    <p className="text-caption font-bold text-on-surface-variant uppercase tracking-wider truncate">
-                      {i.numero}
-                    </p>
-                    <StatusChip status={i.estado} size="sm" />
-                  </div>
-                  <h4 className="text-body-lg font-bold text-on-surface truncate">
-                    {v?.marca} {v?.modelo}{' '}
-                    <span className="text-on-surface-variant font-normal">
-                      {v?.anio}
-                    </span>
-                  </h4>
-                  <p className="text-caption text-on-surface-variant truncate">{i.tipo}</p>
-                  <div className="mt-3">
-                    <div className="flex justify-between text-caption text-on-surface-variant mb-1">
-                      <span>Progreso</span>
-                      <span className="font-bold text-on-surface">{i.progreso}%</span>
-                    </div>
-                    <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-accent rounded-full" style={{ width: `${i.progreso}%` }} />
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+      {/* ── Última inspección ───────────────────────────────────────────── */}
+      {lastInsp && (
+        <section className="mb-4">
+          <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${C.navy}` }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-headline-md font-bold" style={{ color: C.navy }}>
+                Última Inspección
+              </h3>
+              <Link to="/inspecciones" className="text-label-md hover:underline font-semibold" style={{ color: C.navy }}>
+                Ver todas
+              </Link>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: '#EEF0FA', color: C.navy }}>
+                <Icon name="verified" className="text-[26px]" filled />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-on-surface">{lastInsp.numero}</p>
+                <p className="text-caption text-on-surface-variant">
+                  {lastInsp.tipo} · {new Date(lastInsp.fechaCreacion).toLocaleDateString('es-VE')}
+                </p>
+              </div>
+              <StatusChip status={lastInsp.estado} />
+              <div className="flex gap-2">
+                <button onClick={() => navigate(`/inspecciones/${lastInsp.id}`)} className="btn-soft text-caption py-1.5 px-3 min-h-[36px]">
+                  <Icon name="visibility" className="text-[16px]" /> Ver
+                </button>
+                <button onClick={() => navigate('/emision')} className="btn-accent text-caption py-1.5 px-3 min-h-[36px]">
+                  <Icon name="rocket_launch" className="text-[16px]" /> Emitir
+                </button>
+              </div>
+            </div>
+            {lastInsp.planRecomendado && PLAN_MAP[lastInsp.planRecomendado] && (
+              <div className="mt-3 flex items-center gap-2 p-2.5 rounded-xl text-caption font-semibold"
+                style={{
+                  backgroundColor: PLAN_MAP[lastInsp.planRecomendado].colorBg,
+                  color: PLAN_MAP[lastInsp.planRecomendado].colorHex,
+                }}>
+                <Icon name={PLAN_MAP[lastInsp.planRecomendado].icono} className="text-[18px]" filled />
+                Plan recomendado por IA: <strong>{PLAN_MAP[lastInsp.planRecomendado].nombre}</strong>
+              </div>
+            )}
           </div>
         </section>
       )}
+
+      {/* ── Cómo funciona + Actividad ────────────────────────────────────── */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Cómo funciona */}
+        <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${C.navy}` }}>
+          <h3 className="text-headline-md font-bold mb-4" style={{ color: C.navy }}>
+            ¿Cómo funciona?
+          </h3>
+          <div className="flex flex-col gap-3">
+            {[
+              { step: '1', icon: 'add_a_photo',    title: 'Fotografía tu vehículo',      desc: 'Sigue las secuencias guiadas. Captura las 14 zonas del vehículo.' },
+              { step: '2', icon: 'auto_awesome',   title: 'Gemini Vision analiza',        desc: 'La IA clasifica cada pieza como Buena, Regular o Mala automáticamente.' },
+              { step: '3', icon: 'policy',         title: 'Resultado del plan',           desc: 'El sistema calcula qué plan de seguro puedes contratar según el estado.' },
+              { step: '4', icon: 'rocket_launch',  title: 'Emite tu póliza',             desc: 'Completa los datos y emite tu póliza en minutos, sin intermediarios.' },
+            ].map((s) => (
+              <div key={s.step} className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-label-md"
+                  style={{ backgroundColor: C.navy }}>
+                  {s.step}
+                </div>
+                <div className="flex-1 min-w-0 pt-1">
+                  <p className="font-bold text-on-surface text-label-md flex items-center gap-1.5">
+                    <Icon name={s.icon} className="text-[16px]" style={{ color: C.navy }} filled />
+                    {s.title}
+                  </p>
+                  <p className="text-caption text-on-surface-variant mt-0.5 leading-snug">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Link to="/inspecciones/nueva" className="btn-accent w-full mt-4">
+            <Icon name="play_arrow" /> Comenzar ahora
+          </Link>
+        </div>
+
+        {/* Actividad reciente */}
+        <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${C.silver}` }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-headline-md font-bold" style={{ color: C.navy }}>Actividad Reciente</h3>
+            <Link to="/inspecciones" className="text-label-md hover:underline font-semibold" style={{ color: C.navy }}>
+              Ver todo
+            </Link>
+          </div>
+          <div className="flex flex-col divide-y divide-outline-variant/30">
+            {activities.slice(0, 5).map((a) => {
+              const iconColors = {
+                primary: { bg: '#EEF0FA', fg: C.navy },
+                accent:  { bg: '#EEF0FA', fg: C.soft },
+                success: { bg: '#D1FAE5', fg: '#065F46' },
+                error:   { bg: '#FFE4E6', fg: '#991B1B' },
+              }
+              const ic = iconColors[a.tone] ?? { bg: '#F5F5F5', fg: C.silverD }
+              return (
+                <div key={a.id}
+                  className="flex items-center gap-3 py-2.5 hover:bg-surface-container-low rounded-lg px-1.5 transition">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: ic.bg, color: ic.fg }}>
+                    <Icon name={a.icon} className="text-[20px]" filled />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-label-md font-semibold text-on-surface truncate">{a.title}</p>
+                    <p className="text-caption text-on-surface-variant truncate">{a.subtitle}</p>
+                  </div>
+                  <p className="text-[11px] text-on-surface-variant shrink-0">{a.when}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
     </>
   )
 }
@@ -399,54 +283,52 @@ function getGreeting() {
   return 'Buenas noches'
 }
 
-function BentoAction({ tone, icon, title, body, to }) {
+function VehInfo({ label, value, mono }) {
   return (
-    <Link
-      to={to}
-      className={clsx(
-        'flex-1 rounded-xl p-4 sm:p-5 flex flex-col justify-between group cursor-pointer hover:shadow-elev-2 transition-all min-w-0',
-        tone === 'primary'
-          ? 'bg-gradient-brand-soft text-on-primary shadow-elev-primary'
-          : 'card',
-      )}
-    >
-      <div className="flex justify-between items-start mb-3">
-        <div
-          className={clsx(
-            'w-11 h-11 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shrink-0',
-            tone === 'primary'
-              ? 'bg-white/15 text-accent-300'
-              : 'bg-primary-fixed text-primary',
-          )}
-        >
-          <Icon name={icon} className="text-[22px]" filled />
+    <div className="bg-surface-container-low rounded-lg px-2.5 py-2">
+      <p className="text-[10px] text-on-surface-variant uppercase tracking-wide">{label}</p>
+      <p className={`font-semibold text-on-surface text-[13px] truncate ${mono ? 'font-mono' : ''}`}>
+        {value || '—'}
+      </p>
+    </div>
+  )
+}
+
+function PlanCard({ plan }) {
+  const toneMap = {
+    success: { bg: '#DCFCE7', fg: '#16A34A', border: '#86EFAC' },
+    warning: { bg: '#FEF3C7', fg: '#D97706', border: '#FCD34D' },
+    error:   { bg: '#FEE2E2', fg: '#DC2626', border: '#FCA5A5' },
+  }
+  const t = toneMap[plan.color] ?? toneMap.success
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 border-2 flex flex-col gap-3 h-full"
+      style={{ backgroundColor: t.bg, borderColor: t.border }}>
+      <div className="flex items-center gap-3">
+        <div className="w-14 h-14 rounded-2xl bg-white/80 flex items-center justify-center shrink-0 shadow-sm"
+          style={{ color: t.fg }}>
+          <Icon name={plan.icono} className="text-[30px]" filled />
         </div>
-        <Icon
-          name="arrow_outward"
-          className={clsx(
-            'text-[18px] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform',
-            tone === 'primary' ? 'opacity-60' : 'text-on-surface-variant',
-          )}
-        />
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: t.fg }}>Plan Activo</p>
+          <h3 className="text-headline-lg font-bold" style={{ color: t.fg }}>{plan.nombre}</h3>
+          <p className="text-caption" style={{ color: t.fg }}>{plan.subtitulo}</p>
+        </div>
       </div>
-      <div>
-        <h4
-          className={clsx(
-            'text-headline-md mb-0.5 truncate',
-            tone !== 'primary' && 'text-primary',
-          )}
-        >
-          {title}
-        </h4>
-        <p
-          className={clsx(
-            'text-caption sm:text-body-md leading-snug line-clamp-2',
-            tone === 'primary' ? 'opacity-80' : 'text-on-surface-variant',
-          )}
-        >
-          {body}
-        </p>
+      <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="bg-white/60 rounded-xl p-2.5">
+          <p className="text-[10px] uppercase tracking-wide" style={{ color: t.fg }}>Diaria</p>
+          <p className="font-bold text-headline-md" style={{ color: t.fg }}>${plan.prima.diaria}</p>
+        </div>
+        <div className="bg-white/60 rounded-xl p-2.5">
+          <p className="text-[10px] uppercase tracking-wide" style={{ color: t.fg }}>Mensual</p>
+          <p className="font-bold text-headline-md" style={{ color: t.fg }}>${plan.prima.mensual}</p>
+        </div>
       </div>
-    </Link>
+      <Link to="/emision" className="btn-accent w-full mt-auto">
+        <Icon name="rocket_launch" /> Emitir Póliza
+      </Link>
+    </div>
   )
 }

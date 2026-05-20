@@ -1,11 +1,14 @@
 {
   "name": "La Mundial de Seguros · Auto Casco",
   "short_name": "La Mundial",
-  "description": "Auto Casco — inspección digital de vehículos, emisión y activación de pólizas con IA.",
+  "description": "Inspección digital de vehículos, emisión y activación de pólizas con IA.",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0F1A5A",
   "theme_color": "#0F1A5A",
+  "lang": "es",
+  "categories": ["finance", "business"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -18,6 +21,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/apple-touch-icon.png",

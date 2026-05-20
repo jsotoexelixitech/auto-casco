@@ -4,7 +4,7 @@ import { CurrentUser, AuthUser } from '../../common/decorators/current-user.deco
 import { BuyDaysDto, CreatePolicyDto } from './dto/create-policy.dto';
 import { PoliciesService } from './policies.service';
 
-@ApiTags('policies')
+@ApiTags('Policies')
 @ApiBearerAuth('JWT-auth')
 @Controller('policies')
 export class PoliciesController {
@@ -38,3 +38,4 @@ export class PoliciesController {
     return this.service.buyDays(id, dto, user.id, user.role);
   }
 }
+
