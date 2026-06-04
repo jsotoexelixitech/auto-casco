@@ -63,36 +63,47 @@ export function useInspectionState() {
   const [iaDiagnostico, setIaDiagnostico] = useState('')
 
   const setPhoto = useCallback((id, patch) => {
-    setPhotos((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], ...patch },
-    }))
+    setPhotos((prev) => {
+      const p = prev[id] || { piezas: {}, issues: [] }
+      return {
+        ...prev,
+        [id]: { ...p, ...patch },
+      }
+    })
   }, [])
 
   const setPiezaEstado = useCallback((seqId, piezaName, estado) => {
-    setPhotos((prev) => ({
-      ...prev,
-      [seqId]: {
-        ...prev[seqId],
-        piezas: {
-          ...prev[seqId].piezas,
-          [piezaName]: { ...prev[seqId].piezas[piezaName], estado },
+    setPhotos((prev) => {
+      const p = prev[seqId] || { piezas: {} }
+      const pPiezas = p.piezas || {}
+      return {
+        ...prev,
+        [seqId]: {
+          ...p,
+          piezas: {
+            ...pPiezas,
+            [piezaName]: { ...(pPiezas[piezaName] || {}), estado },
+          },
         },
-      },
-    }))
+      }
+    })
   }, [])
 
   const setPiezaComentario = useCallback((seqId, piezaName, comentario) => {
-    setPhotos((prev) => ({
-      ...prev,
-      [seqId]: {
-        ...prev[seqId],
-        piezas: {
-          ...prev[seqId].piezas,
-          [piezaName]: { ...prev[seqId].piezas[piezaName], comentario },
+    setPhotos((prev) => {
+      const p = prev[seqId] || { piezas: {} }
+      const pPiezas = p.piezas || {}
+      return {
+        ...prev,
+        [seqId]: {
+          ...p,
+          piezas: {
+            ...pPiezas,
+            [piezaName]: { ...(pPiezas[piezaName] || {}), comentario },
+          },
         },
-      },
-    }))
+      }
+    })
   }, [])
 
   const reset = useCallback(() => {

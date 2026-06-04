@@ -173,15 +173,15 @@ export default function Step3Photos({ state }) {
         </div>
       )}
 
-      {/* Progress + pill rail */}
+      {/* Progress */}
       <div className="card p-3 sm:p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-headline-md text-on-surface">Secuencias fotográficas</h3>
+          <h3 className="text-headline-md text-on-surface">Progreso Fotográfico</h3>
           <span className="text-caption font-bold bg-primary text-on-primary px-2.5 py-1 rounded-full">
             {completed} / {Math.max(visibleSequences.length, 10)}
           </span>
         </div>
-        <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden mb-3">
+        <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all"
             style={{
@@ -190,75 +190,87 @@ export default function Step3Photos({ state }) {
             }}
           />
         </div>
-        <div ref={railRef} className="flex gap-2 overflow-x-auto no-scrollbar -mx-3 px-3 pb-1 snap-x snap-mandatory">
-          {visibleSequences.map((s, i) => {
-            const ph = photos[s.id]
-            const active = activeSeq === s.id
-            const isNext = !active && !ph?.uploaded && visibleSequences.findIndex((x) => x.id === activeSeq) + 1 === i
-            return (
-              <button
-                key={s.id}
-                data-seq={s.id}
-                onClick={() => handleTabClick(s, i)}
-                className={clsx(
-                  'shrink-0 snap-start flex items-center gap-2 px-3 min-h-[44px] py-2 rounded-full border-2 transition-all',
-                  active
-                    ? 'bg-primary text-on-primary border-primary shadow-elev-primary'
-                    : ph?.analyzed
-                    ? 'bg-success-container/60 text-on-success-container border-success/40 hover:border-success/70'
-                    : ph?.uploaded
-                    ? 'bg-primary/10 text-primary border-primary/30'
-                    : isNext
-                    ? 'bg-amber-50 text-amber-800 border-amber-400 animate-pulse'
-                    : 'bg-white text-on-surface-variant border-outline-variant/60 hover:border-primary/40',
-                )}
-              >
-                {/* Thumbnail si hay foto */}
-                {ph?.thumbnail && !active ? (
-                  <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-white/50">
-                    <img src={ph.thumbnail} alt="" className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <span className={clsx(
-                    'w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0',
-                    active && 'bg-white/20 text-white',
-                    !active && ph?.analyzed && 'bg-success text-white',
-                    !active && ph?.uploaded && !ph?.analyzed && 'bg-primary text-white',
-                    !active && isNext && 'bg-amber-500 text-white',
-                    !active && !ph?.uploaded && !isNext && 'bg-surface-container text-on-surface-variant',
-                  )}>
-                    {ph?.analyzed ? <Icon name="check" className="text-[13px]" /> : i + 1}
-                  </span>
-                )}
-                <span className="text-label-md whitespace-nowrap">{s.nombre}</span>
-                {ph?.analyzing && <Icon name="auto_awesome" className="text-[14px] animate-pulse shrink-0" />}
-              </button>
-            )
-          })}
-        </div>
       </div>
 
-      {/* Main layout: diagram + capture */}
-      <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4">
-        {/* Vehicle diagram */}
-        <div className="card p-3 sm:p-4 flex flex-col items-center">
-          <h4 className="text-label-md text-on-surface-variant text-center mb-2 font-semibold uppercase tracking-wide text-[11px]">
-            Plano del vehículo
-          </h4>
-          <CarDiagram
-            sequences={visibleSequences}
-            photos={photos}
-            activeSeqId={activeSeq}
-          />
-          <div className="mt-3 w-full flex flex-col gap-1.5 text-[11px]">
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-3.5 rounded bg-green-600 inline-block shrink-0" />
-              <span className="text-on-surface-variant">Capturando ahora</span>
+      {/* Main layout: left sidebar (diagram + list) + right capture */}
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4">
+        {/* Left Sidebar */}
+        <div className="flex flex-col gap-4">
+          {/* Vehicle diagram */}
+          <div className="card p-3 sm:p-4 flex flex-col items-center">
+            <h4 className="text-label-md text-on-surface-variant text-center mb-2 font-semibold uppercase tracking-wide text-[11px]">
+              Plano del vehículo
+            </h4>
+            <CarDiagram
+              sequences={visibleSequences}
+              photos={photos}
+              activeSeqId={activeSeq}
+            />
+            <div className="mt-3 w-full flex flex-col gap-1.5 text-[11px]">
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-3.5 rounded bg-green-600 inline-block shrink-0" />
+                <span className="text-on-surface-variant">Capturando ahora</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-3.5 rounded bg-primary inline-block shrink-0" />
+                <span className="text-on-surface-variant">Completada ✓</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-3.5 rounded bg-primary inline-block shrink-0" />
-              <span className="text-on-surface-variant">Completada ✓</span>
-            </div>
+          </div>
+
+          {/* Sequences Vertical List */}
+          <div className="card p-3 flex flex-col gap-2 max-h-[500px] overflow-y-auto no-scrollbar">
+            <h4 className="text-label-md text-on-surface-variant mb-1 font-semibold uppercase tracking-wide text-[11px]">
+              Secuencias
+            </h4>
+            {visibleSequences.map((s, i) => {
+              const ph = photos[s.id]
+              const active = activeSeq === s.id
+              const isNext = !active && !ph?.uploaded && visibleSequences.findIndex((x) => x.id === activeSeq) + 1 === i
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => handleTabClick(s, i)}
+                  className={clsx(
+                    'flex items-center gap-3 p-2 rounded-xl border-2 transition-all text-left w-full',
+                    active
+                      ? 'bg-primary text-on-primary border-primary shadow-elev-primary'
+                      : ph?.analyzed
+                      ? 'bg-success-container/60 text-on-success-container border-success/40 hover:border-success/70'
+                      : ph?.uploaded
+                      ? 'bg-primary/10 text-primary border-primary/30'
+                      : isNext
+                      ? 'bg-amber-50 text-amber-800 border-amber-400 animate-pulse'
+                      : 'bg-white text-on-surface-variant border-outline-variant/60 hover:border-primary/40',
+                  )}
+                >
+                  {/* Thumbnail si hay foto */}
+                  {ph?.thumbnail && !active ? (
+                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/50">
+                      <img src={ph.thumbnail} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <span className={clsx(
+                      'w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0',
+                      active && 'bg-white/20 text-white',
+                      !active && ph?.analyzed && 'bg-success text-white',
+                      !active && ph?.uploaded && !ph?.analyzed && 'bg-primary text-white',
+                      !active && isNext && 'bg-amber-500 text-white',
+                      !active && !ph?.uploaded && !isNext && 'bg-surface-container text-on-surface-variant',
+                    )}>
+                      {ph?.analyzed ? <Icon name="check" className="text-[16px]" /> : i + 1}
+                    </span>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-label-md font-bold truncate">{s.nombre}</p>
+                    {s.isDynamicDetail && !active && (
+                      <p className="text-[10px] opacity-80 truncate">Detalle requerido</p>
+                    )}
+                  </div>
+                  {ph?.analyzing && <Icon name="auto_awesome" className="text-[16px] animate-pulse shrink-0" />}
+                </button>
+              )
+            })}
           </div>
         </div>
 
