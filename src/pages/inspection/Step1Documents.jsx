@@ -87,46 +87,62 @@ export default function Step1Documents({ state }) {
             Carga la cédula o el RIF del titular. El sistema detecta si es persona
             natural (V/E) o jurídica (J/G/C).
           </p>
-          <div className="flex items-center gap-2 mb-4 bg-surface-container/50 p-1 rounded-lg w-max">
+          {/* Segmented Control Moderno */}
+          <div className="flex p-1 bg-surface-container/60 rounded-xl w-max mb-5 border border-outline-variant/30">
             <button
               onClick={() => setTipoPersona('natural')}
-              className={clsx('px-4 py-1.5 rounded-md text-sm font-bold transition-all', tipoPersona === 'natural' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:bg-white/50')}
+              className={clsx(
+                'relative px-5 py-2 rounded-lg text-label-md font-bold transition-all duration-300',
+                tipoPersona === 'natural'
+                  ? 'text-primary shadow-sm bg-white'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              )}
             >
               Persona Natural
             </button>
             <button
               onClick={() => setTipoPersona('juridica')}
-              className={clsx('px-4 py-1.5 rounded-md text-sm font-bold transition-all', tipoPersona === 'juridica' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:bg-white/50')}
+              className={clsx(
+                'relative px-5 py-2 rounded-lg text-label-md font-bold transition-all duration-300',
+                tipoPersona === 'juridica'
+                  ? 'text-primary shadow-sm bg-white'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              )}
             >
               Persona Jurídica
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {tipoPersona === 'natural' ? (
-              <UploadCard
-                icon="badge"
-                title="Cédula de Identidad"
-                subtitle="V- · E- · JPG o PDF"
-                done={!!docs.cedula}
-                loading={scanning === 'cedula'}
-                onFile={(e) => handleFileSelect('cedula', e)}
-                extractedLabel={tomador?.documento && isPersonaNatural ? tomador.documento : null}
-              />
-            ) : (
-              <UploadCard
-                icon="domain"
-                title="Registro de Información Fiscal"
-                subtitle="J · G · C · JPG o PDF"
-                done={!!docs.rif}
-                loading={scanning === 'rif'}
-                onFile={(e) => handleFileSelect('rif', e)}
-                extractedLabel={tomador?.documento && !isPersonaNatural ? tomador.documento : null}
-              />
-            )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex flex-col">
+              {tipoPersona === 'natural' ? (
+                <UploadCard
+                  icon="badge"
+                  title="Cédula de Identidad"
+                  subtitle="Formatos: JPG o PDF"
+                  done={!!docs.cedula}
+                  loading={scanning === 'cedula'}
+                  onFile={(e) => handleFileSelect('cedula', e)}
+                  extractedLabel={tomador?.documento && isPersonaNatural ? tomador.documento : null}
+                />
+              ) : (
+                <UploadCard
+                  icon="domain"
+                  title="Registro de Información Fiscal"
+                  subtitle="Formatos: JPG o PDF"
+                  done={!!docs.rif}
+                  loading={scanning === 'rif'}
+                  onFile={(e) => handleFileSelect('rif', e)}
+                  extractedLabel={tomador?.documento && !isPersonaNatural ? tomador.documento : null}
+                />
+              )}
+            </div>
             
-            {/* Formulario rápido al lado de la carga del doc */}
-            <div className="flex flex-col gap-3 justify-center">
+            {/* Formulario a la derecha de la carga */}
+            <div className="flex flex-col justify-center gap-4 bg-surface-container/20 p-4 rounded-xl border border-outline-variant/30">
+              <h4 className="text-label-md text-primary font-bold uppercase tracking-wider text-[11px] mb-1">
+                Datos extraídos
+              </h4>
               {tipoPersona === 'natural' ? (
                 <>
                   <FormField label="Nombres" value={tomador.nombres} onChange={(v) => setTomador({ ...tomador, nombres: v })} />
@@ -189,9 +205,10 @@ export default function Step1Documents({ state }) {
             </div>
           )}
 
-          <div className="mt-4 pt-4 border-t border-outline-variant/50">
-            <label className="flex items-center gap-3 cursor-pointer group w-max">
-              <div className="relative flex items-center justify-center">
+          <div className="mt-5 pt-5 border-t border-outline-variant/30">
+            <label className="flex items-center gap-4 cursor-pointer group w-max p-2 rounded-xl hover:bg-surface-container/40 transition-colors">
+              {/* iOS style toggle */}
+              <div className="relative flex items-center">
                 <input
                   type="checkbox"
                   className="peer sr-only"
@@ -202,28 +219,30 @@ export default function Step1Documents({ state }) {
                     if (!is0km) setDocs({ ...docs, certificadoOrigen: null })
                   }}
                 />
-                <div className="w-6 h-6 rounded border-2 border-outline-variant peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
-                  <Icon name="check" className="text-white text-[18px] opacity-0 peer-checked:opacity-100 transition-opacity" />
-                </div>
+                <div className="w-11 h-6 bg-surface-variant rounded-full peer peer-checked:bg-primary transition-colors duration-300"></div>
+                <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-transform duration-300 peer-checked:translate-x-5 shadow-sm"></div>
               </div>
-              <span className="font-bold text-on-surface group-hover:text-primary transition-colors">
-                Mi vehículo es 0km (Nuevo)
-              </span>
+              <div>
+                <span className="font-bold text-on-surface text-label-lg group-hover:text-primary transition-colors">
+                  Mi vehículo es 0km (Nuevo)
+                </span>
+                <p className="text-caption text-on-surface-variant mt-0.5">Habilita esta opción si el auto sale de agencia</p>
+              </div>
             </label>
           </div>
 
           {vehiculo?.is0km && (
-            <div className="mt-4 p-4 border-2 border-accent-300/30 bg-accent-50/20 rounded-xl animate-fade-in flex flex-col sm:flex-row gap-4 items-center">
+            <div className="mt-4 p-5 border-2 border-primary/20 bg-primary/5 rounded-2xl animate-fade-in flex flex-col md:flex-row gap-6 items-center">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Icon name="workspace_premium" className="text-accent-500 text-[20px]" filled />
-                  <h4 className="font-bold text-on-surface">Certificado de Origen</h4>
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                  <Icon name="workspace_premium" className="text-primary text-[22px]" filled />
                 </div>
-                <p className="text-sm text-on-surface-variant">
-                  Requisito obligatorio para asegurar vehículos 0km.
+                <h4 className="font-bold text-on-surface text-headline-sm mb-1">Certificado de Origen</h4>
+                <p className="text-body-md text-on-surface-variant">
+                  Para asegurar un vehículo 0km requerimos la carga del certificado de origen emitido por el concesionario.
                 </p>
               </div>
-              <div className="w-full sm:w-64">
+              <div className="w-full md:w-72">
                 <UploadCard
                   icon="verified"
                   title="Subir Certificado"
@@ -296,49 +315,47 @@ export default function Step1Documents({ state }) {
 function UploadCard({ icon, title, subtitle, done, loading, onFile, extractedLabel }) {
   return (
     <label
-      className={`relative overflow-hidden rounded-xl border-2 border-dashed p-3 transition-all text-left flex items-center gap-3 cursor-pointer active:scale-[0.99] ${
+      className={clsx(
+        'relative overflow-hidden rounded-2xl border-2 transition-all text-left flex flex-col items-center justify-center gap-3 p-6 cursor-pointer active:scale-[0.98] min-h-[160px] group',
         done
-          ? 'border-success bg-success-container/30'
+          ? 'border-success bg-success-container/10 hover:bg-success-container/20'
           : loading
-          ? 'border-primary bg-primary-fixed/40 cursor-wait'
-          : 'border-outline-variant/70 hover:border-primary hover:bg-primary-fixed/20'
-      }`}
-    >
-      <input 
-        type="file" 
-        className="hidden" 
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        onChange={onFile}
-        disabled={loading}
-      />
-      {loading && (
-        <div className="absolute inset-x-0 bottom-0 h-1 bg-primary/20 overflow-hidden">
-          <div className="h-full w-1/2 bg-gradient-accent animate-shimmer rounded-r-full" />
-        </div>
+          ? 'border-primary/50 bg-primary/5'
+          : 'border-dashed border-outline-variant/80 hover:border-primary/50 hover:bg-surface-container/50 hover:shadow-sm'
       )}
+    >
+      <input type="file" className="sr-only" accept="image/*,application/pdf" onChange={onFile} disabled={loading} />
+      
       <div
-        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-          done ? 'bg-success text-on-success' : 'bg-primary-fixed text-primary'
-        }`}
+        className={clsx(
+          'w-14 h-14 rounded-full flex items-center justify-center shrink-0 transition-all duration-300',
+          done 
+            ? 'bg-success text-white shadow-md scale-110' 
+            : loading 
+            ? 'bg-primary/20 text-primary' 
+            : 'bg-surface-variant/50 text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary'
+        )}
       >
-        <Icon
-          name={done ? 'task_alt' : loading ? 'progress_activity' : icon}
-          className={loading ? 'animate-spin' : ''}
-          filled
+        <Icon 
+          name={done ? 'check' : loading ? 'hourglass_empty' : icon} 
+          className={clsx('text-[28px]', loading && 'animate-spin-slow')} 
         />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-on-surface truncate">{title}</p>
-        <p className="text-caption text-on-surface-variant truncate">
-          {loading ? 'Procesando con OCR…' : extractedLabel || subtitle}
+      
+      <div className="text-center w-full">
+        <p className={clsx('text-label-lg font-bold truncate transition-colors mb-1', done ? 'text-success' : 'text-on-surface')}>
+          {done ? 'Documento cargado' : title}
+        </p>
+        <p className={clsx('text-caption px-2 truncate', done ? 'text-success/80' : 'text-on-surface-variant/80')}>
+          {loading ? 'Analizando con IA...' : extractedLabel || subtitle}
         </p>
       </div>
-      {!loading && (
-        <Icon
-          name={done ? 'check_circle' : 'cloud_upload'}
-          className={done ? 'text-success' : 'text-on-surface-variant'}
-          filled={done}
-        />
+
+      {/* Decorative upload icon when idle */}
+      {!done && !loading && (
+        <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-surface-container flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <Icon name="file_upload" className="text-primary text-[16px]" />
+        </div>
       )}
     </label>
   )
