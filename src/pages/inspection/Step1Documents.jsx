@@ -8,47 +8,46 @@ import { readFileAsBase64 } from '../../services/aiVehicleAnalysis'
 export default function Step1Documents({ state }) {
   const { docs, setDocs, tomador, setTomador, vehiculo, setVehiculo } = state
   const toast = useToast()
-  const [scanning, setScanning] = useState(null)
+  // scanning is now an object tracking multiple active uploads: { cedula: true, certificado: true }
+  const [scanning, setScanning] = useState({})
   const [tipoPersona, setTipoPersona] = useState('natural') // 'natural' | 'juridica'
 
   const handleFileSelect = async (kind, e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    setScanning(kind)
+    setScanning(prev => ({ ...prev, [kind]: true }))
     toast.info(`Extrayendo datos con OCR de ${kind}…`, { title: 'Análisis IA en curso' })
 
     try {
       const base64 = await readFileAsBase64(file)
-      // Usar 'cedula' genérico para RIF también porque el provider usa los prompts, 
-      // pero si es RIF pasamos el docType 'rif'
       const ocrResult = await extractDocumentOcr(base64, kind)
       
       if (kind === 'cedula') {
         const data = ocrResult
-        setDocs({ ...docs, cedula: file, naturaleza: 'natural' })
-        setTomador({
-          ...tomador,
+        setDocs(prev => ({ ...prev, cedula: file, naturaleza: 'natural' }))
+        setTomador(prev => ({
+          ...prev,
           nombres: data.nombre || '',
           apellidos: data.apellido || '',
           documento: data.identificacion || '',
           fechaNacimiento: data.fechaNacimiento || '',
-        })
+        }))
         toast.success('Cédula procesada · Datos extraídos', { title: 'OCR completado' })
       } else if (kind === 'rif') {
         const data = ocrResult
-        setDocs({ ...docs, rif: file, naturaleza: 'juridica' })
-        setTomador({
-          ...tomador,
+        setDocs(prev => ({ ...prev, rif: file, naturaleza: 'juridica' }))
+        setTomador(prev => ({
+          ...prev,
           razonSocial: data.razonSocial || '',
           documento: data.rif || '',
-        })
+        }))
         toast.success('RIF procesado · Persona Jurídica detectada', { title: 'OCR completado' })
       } else if (kind === 'certificado') {
         const data = ocrResult
-        setDocs({ ...docs, carnet: file })
-        setVehiculo({
-          ...vehiculo,
+        setDocs(prev => ({ ...prev, carnet: file }))
+        setVehiculo(prev => ({
+          ...prev,
           marca: data.marca || '',
           modelo: data.modelo || '',
           tipo: data.tipo || 'AUTOMOVIL',
@@ -57,7 +56,7 @@ export default function Step1Documents({ state }) {
           color: data.color || '',
           anio: data.anio || '',
           puestos: data.puestos || '5',
-        })
+        }))
         toast.success(`Carnet procesado · ${data.marca} ${data.modelo} ${data.anio}`, {
           title: 'OCR completado',
         })
@@ -66,7 +65,7 @@ export default function Step1Documents({ state }) {
       console.error(err)
       toast.error(err.message, { title: 'Error en OCR' })
     } finally {
-      setScanning(null)
+      setScanning(prev => ({ ...prev, [kind]: false }))
       e.target.value = '' // Reset
     }
   }
@@ -137,7 +136,7 @@ export default function Step1Documents({ state }) {
               title="Cédula de Identidad"
               subtitle="Formato V- o E-"
               done={!!docs.cedula}
-              loading={scanning === 'cedula'}
+              loading={scanning['cedula']}
               onFile={(e) => handleFileSelect('cedula', e)}
             />
           ) : (
@@ -146,7 +145,7 @@ export default function Step1Documents({ state }) {
               title="Registro de Información Fiscal"
               subtitle="Formato J, G o C"
               done={!!docs.rif}
-              loading={scanning === 'rif'}
+              loading={scanning['rif']}
               onFile={(e) => handleFileSelect('rif', e)}
             />
           )}
@@ -191,7 +190,7 @@ export default function Step1Documents({ state }) {
               title="Carnet de Circulación"
               subtitle="Sube una foto clara del documento"
               done={!!docs.carnet}
-              loading={scanning === 'certificado'}
+              loading={scanning['certificado']}
               onFile={(e) => handleFileSelect('certificado', e)}
             />
 
@@ -257,10 +256,11 @@ export default function Step1Documents({ state }) {
                   title="Subir Certificado"
                   subtitle="PDF o Imagen"
                   done={!!docs.certificadoOrigen}
-                  loading={scanning === 'origen'}
+                  loading={scanning['origen']}
                   onFile={(e) => {
                     if (e.target.files?.[0]) {
-                      setDocs({ ...docs, certificadoOrigen: e.target.files[0] })
+                      const file = e.target.files[0]
+                      setDocs(prev => ({ ...prev, certificadoOrigen: file }))
                     }
                   }}
                 />
