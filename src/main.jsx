@@ -5,18 +5,21 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { DataProvider } from './context/DataContext.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
+// import { NexusGuard } from './nexus/NexusGuard.jsx'  // desactivado temporalmente
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <ToastProvider>
-        <AuthProvider>
-          <DataProvider>
-            <App />
-          </DataProvider>
-        </AuthProvider>
-      </ToastProvider>
-    </BrowserRouter>
+    {/* <NexusGuard serviceName="Auto Casa Inspección"> */}
+      <BrowserRouter>
+        <ToastProvider>
+          <AuthProvider>
+            <DataProvider>
+              <App />
+            </DataProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </BrowserRouter>
+    {/* </NexusGuard> */}
   </React.StrictMode>,
 )

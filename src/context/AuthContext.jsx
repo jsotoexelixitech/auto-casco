@@ -25,8 +25,13 @@ export function AuthProvider({ children }) {
           const mapped = mapApiUser(u)
           setUser(mapped)
           localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped))
-        }).catch(() => {
+        }).catch((err) => {
+          // Token inválido o vencido — limpiar sesión completamente
           api.clearToken()
+          if (err?.status === 401) {
+            localStorage.removeItem(STORAGE_KEY)
+            setUser(null)
+          }
         })
       }
     })

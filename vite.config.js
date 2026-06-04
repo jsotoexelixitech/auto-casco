@@ -24,6 +24,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: 'index.html',
+        // Permitir navegación con query params (nexus_token, etc.)
+        navigateFallbackAllowlist: [/^\//, /\?nexus_token=/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,

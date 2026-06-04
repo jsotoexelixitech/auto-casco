@@ -9,8 +9,11 @@ import { useData } from '../context/DataContext'
 import { downloadPdf } from '../utils/downloadPdf'
 import { useInspectionState } from './inspection/useInspectionState'
 import { determinarPlan, calcularPiezas } from '../utils/planEngine'
+import { getDynamicSequences } from '../utils/sequencesConfig'
 import ResultadoInspeccion from '../components/emission/ResultadoInspeccion'
 import Step3Photos from './inspection/Step3Photos'
+import { extractDocumentOcr } from '../services/aiDocumentOcr'
+import { readFileAsBase64 } from '../services/aiVehicleAnalysis'
 
 // ─── Pasos del wizard unificado ───────────────────────────────────────────────
 const STEPS = [
@@ -74,6 +77,19 @@ export default function EmissionPage() {
 
   // ── Verificación fotos antes de avanzar al resultado ──
   const handleInspNext = () => {
+    const visibleSequences = getDynamicSequences(inspState.vehiculo, inspState.photos)
+    const completed = visibleSequences.filter((s) => inspState.photos[s.id]?.uploaded).length
+    
+    if (completed < 10) {
+      toast.error(`Debes tomar al menos 10 fotos. Llevas ${completed}.`, { title: 'Fotos insuficientes' })
+      return
+    }
+
+    if (completed < visibleSequences.length) {
+      toast.error(`Te faltan fotos por capturar (incluyendo detalles de daños). Llevas ${completed} de ${visibleSequences.length}.`, { title: 'Inspección incompleta' })
+      return
+    }
+
     const piezas = calcularPiezas(inspState.photos)
     if (piezas.analizadas === 0) {
       toast.error('Debes fotografiar y analizar al menos una secuencia antes de continuar.', { title: 'Inspección incompleta' })
@@ -82,15 +98,34 @@ export default function EmissionPage() {
     next()
   }
 
-  // ── OCR simulado ──
-  const simulateOcr = () => {
+  // ── OCR real ──
+  const handleOcrSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
     setOcrScanning(true)
-    setTimeout(() => {
-      setTomador({ nombres: 'Juan Carlos', apellidos: 'Pérez Gómez', documento: '12345678', tipoDoc: 'V', email: 'jperez@email.com', telefono: '(0414) 555-0123', fechaNacimiento: '1985-06-15' })
-      setVehiculo({ marca: 'Toyota', modelo: 'Corolla', anio: '2022', chasis: '2T1BURHE0JC001234', placa: inspState.vehiculo.placa || 'ABC-1234', uso: 'Privado', color: 'Plata' })
-      setOcrScanning(false)
+    toast.info('Extrayendo datos con OCR…', { title: 'Análisis IA en curso' })
+    try {
+      const base64 = await readFileAsBase64(file)
+      const data = await extractDocumentOcr(base64, 'cedula')
+      
+      setTomador({ 
+        nombres: data.nombre || '', 
+        apellidos: data.apellido || '', 
+        documento: data.identificacion || '', 
+        tipoDoc: data.tipoDoc || 'V', 
+        email: tomador.email, 
+        telefono: tomador.telefono, 
+        fechaNacimiento: data.fechaNacimiento || '' 
+      })
       toast.success('Datos extraídos del documento.', { title: 'OCR completado' })
-    }, 2000)
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message, { title: 'Error en OCR' })
+    } finally {
+      setOcrScanning(false)
+      e.target.value = ''
+    }
   }
 
   // ── Emitir póliza ──
@@ -313,9 +348,10 @@ export default function EmissionPage() {
                 <Icon name="person" className="text-primary text-[20px]" filled />
                 Datos del Tomador
               </h3>
-              <button onClick={simulateOcr} disabled={ocrScanning} className="btn-soft text-[13px]">
+              <label className={clsx("btn-soft text-[13px] cursor-pointer", ocrScanning && "opacity-50 cursor-wait")}>
+                <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleOcrSelect} disabled={ocrScanning} />
                 {ocrScanning ? <><Icon name="hourglass_empty" className="animate-spin" /> Escaneando…</> : <><Icon name="document_scanner" /> OCR</>}
-              </button>
+              </label>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Nombres" value={tomador.nombres} onChange={(v) => setTomador((t) => ({ ...t, nombres: v }))} placeholder="Juan Carlos" required />

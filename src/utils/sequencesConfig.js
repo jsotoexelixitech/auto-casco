@@ -37,3 +37,39 @@ export function getActiveSequences() {
 export function saveEnabledSequenceIds(ids) {
   localStorage.setItem(LS_KEY, JSON.stringify(ids))
 }
+
+/**
+ * Calcula todas las secuencias (base + dinámicas por daños)
+ */
+export function getDynamicSequences(vehiculo, photos) {
+  const tipoVehiculo = vehiculo?.tipo || 'Particular'
+  
+  // 1. Get base sequences
+  const baseSequences = getActiveSequences().filter(
+    (s) => !s.excludeVehicleTypes?.includes(tipoVehiculo)
+  )
+
+  // 2. Generate dynamic detail sequences based on analysis
+  const detailSequences = []
+  if (photos) {
+    for (const [seqId, photoData] of Object.entries(photos)) {
+      if (photoData.analyzed && photoData.piezas) {
+        for (const [pieza, data] of Object.entries(photoData.piezas)) {
+          if (data.estado === 'R' || data.estado === 'M') {
+            detailSequences.push({
+              id: `seq-detail-${seqId}-${pieza.replace(/[\s./-]+/g, '')}`,
+              nombre: `Detalle: ${pieza}`,
+              descripcion: `Foto detallada de la observación en ${pieza}.`,
+              icon: 'zoom_in',
+              diagramZone: 'damages',
+              piezas: [pieza],
+              isDynamicDetail: true,
+            })
+          }
+        }
+      }
+    }
+  }
+
+  return [...baseSequences, ...detailSequences]
+}

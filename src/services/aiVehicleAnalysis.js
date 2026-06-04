@@ -187,7 +187,9 @@ Responde ÚNICAMENTE en JSON válido:
   },
   "resumenGeneral": "evaluación global máximo 120 caracteres",
   "alertas": [],
-  "placaDetectada": "número de placa si visible, null si no"
+  "placaDetectada": "número de placa si visible, null si no",
+  "coincideModelo": true,
+  "motivoNoCoincide": "si coincideModelo es false, indica brevemente por qué el vehículo en la foto no parece ser un ${vehiculoDesc}. Si es true, null."
 }`
 }
 
@@ -334,6 +336,8 @@ function simulateAnalysis(piezas, diagramZone) {
         : 'Zona en buen estado general',
     alertas: malos > 1 ? ['Múltiples piezas con daño grave — evaluar asegurabilidad'] : [],
     placaDetectada: null,
+    coincideModelo: true,
+    motivoNoCoincide: null,
     _simulado: true,
   }
 }

@@ -52,6 +52,17 @@ export function DataProvider({ children }) {
     const backendUp = api.getBackendAvailability() ?? (await api.probeBackend())
     if (!backendUp) return
 
+    // Validate token before firing all requests — avoids 401 spam in console
+    try {
+      await api.auth.me()
+    } catch (err) {
+      if (err?.status === 401) {
+        // Token expired/invalid — clearToken already called in api.js request()
+        console.info('[DataContext] Sesión vencida — modo demo activo.')
+        return
+      }
+    }
+
     try {
       const [apiPolicies, apiSiniestros, apiPagos, apiMethods, apiPlans] =
         await Promise.allSettled([

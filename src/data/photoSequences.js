@@ -139,4 +139,12 @@ export const PHOTO_SEQUENCES = [
     diagramZone: 'damages',
     piezas: ['Daños identificados'],
   },
+  {
+    id: 'seq-techo',
+    nombre: 'Techo del Vehículo',
+    descripcion: 'Vista superior del techo, preferiblemente desde un ángulo elevado.',
+    icon: 'roofing',
+    diagramZone: 'roof',
+    piezas: ['Techo', 'Quema Coco'],
+  },
 ]

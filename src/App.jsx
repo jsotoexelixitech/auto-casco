@@ -59,11 +59,12 @@ export default function App() {
     <ErrorBoundary>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* ProtectedRoute temporalmente desactivado para revisión sin login */}
       <Route
         element={
-          <ProtectedRoute>
+          // <ProtectedRoute>
             <AppLayout />
-          </ProtectedRoute>
+          // </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="/dashboard" replace />} />

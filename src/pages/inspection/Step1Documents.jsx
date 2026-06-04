@@ -1,60 +1,77 @@
 import { useState } from 'react'
 import Icon from '../../components/ui/Icon'
-import { OCR_TEMPLATES } from '../../data/mockData'
 import { useToast } from '../../context/ToastContext'
+import { extractDocumentOcr } from '../../services/aiDocumentOcr'
+import { readFileAsBase64 } from '../../services/aiVehicleAnalysis'
 
 export default function Step1Documents({ state }) {
   const { docs, setDocs, tomador, setTomador, vehiculo, setVehiculo } = state
   const toast = useToast()
   const [scanning, setScanning] = useState(null)
 
-  const simulateOCR = (kind) => {
+  const handleFileSelect = async (kind, e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
     setScanning(kind)
-    toast.info('Procesando documento con OCR…', { title: 'Análisis en curso' })
-    setTimeout(() => {
+    toast.info(`Extrayendo datos con OCR de ${kind}…`, { title: 'Análisis IA en curso' })
+
+    try {
+      const base64 = await readFileAsBase64(file)
+      // Usar 'cedula' genérico para RIF también porque el provider usa los prompts, 
+      // pero si es RIF pasamos el docType 'rif'
+      const ocrResult = await extractDocumentOcr(base64, kind)
+      
       if (kind === 'cedula') {
-        const data = OCR_TEMPLATES.cedula
-        setDocs({ ...docs, cedula: data, naturaleza: 'natural' })
+        const data = ocrResult
+        setDocs({ ...docs, cedula: file, naturaleza: 'natural' })
         setTomador({
           ...tomador,
-          nombres: data.nombres,
-          apellidos: data.apellidos,
-          documento: data.documento,
-          fechaNacimiento: data.fechaNacimiento,
+          nombres: data.nombre || '',
+          apellidos: data.apellido || '',
+          documento: data.identificacion || '',
+          fechaNacimiento: data.fechaNacimiento || '',
         })
         toast.success('Cédula procesada · Datos extraídos', { title: 'OCR completado' })
       } else if (kind === 'rif') {
-        const data = OCR_TEMPLATES.rif
-        setDocs({ ...docs, rif: data, naturaleza: 'juridica' })
+        const data = ocrResult
+        setDocs({ ...docs, rif: file, naturaleza: 'juridica' })
         setTomador({
           ...tomador,
-          razonSocial: data.razonSocial,
-          documento: data.documento,
+          razonSocial: data.razonSocial || '',
+          documento: data.rif || '',
         })
         toast.success('RIF procesado · Persona Jurídica detectada', { title: 'OCR completado' })
-      } else if (kind === 'carnet') {
-        const data = OCR_TEMPLATES.carnet
-        setDocs({ ...docs, carnet: data })
+      } else if (kind === 'certificado') {
+        const data = ocrResult
+        setDocs({ ...docs, carnet: file })
         setVehiculo({
           ...vehiculo,
-          marca: data.marca,
-          modelo: data.modelo,
-          tipo: data.tipo,
-          serial: data.serial,
-          placa: data.placa,
-          color: data.color,
-          anio: data.anio,
-          puestos: data.puestos,
+          marca: data.marca || '',
+          modelo: data.modelo || '',
+          tipo: data.tipo || 'AUTOMOVIL',
+          serial: data.serial || '',
+          placa: data.placa || '',
+          color: data.color || '',
+          anio: data.anio || '',
+          puestos: data.puestos || '5',
         })
         toast.success(`Carnet procesado · ${data.marca} ${data.modelo} ${data.anio}`, {
           title: 'OCR completado',
         })
       }
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message, { title: 'Error en OCR' })
+    } finally {
       setScanning(null)
-    }, 1800)
+      e.target.value = '' // Reset
+    }
   }
 
   const isPersonaNatural = docs.naturaleza === 'natural'
+  const is0km = vehiculo?.anio && parseInt(vehiculo.anio) >= new Date().getFullYear()
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -76,8 +93,8 @@ export default function Step1Documents({ state }) {
               subtitle="V- · E- · Persona Natural"
               done={!!docs.cedula}
               loading={scanning === 'cedula'}
-              onClick={() => simulateOCR('cedula')}
-              extractedLabel={docs.cedula?.documento}
+              onFile={(e) => handleFileSelect('cedula', e)}
+              extractedLabel={tomador?.documento && isPersonaNatural ? tomador.documento : null}
             />
             <UploadCard
               icon="domain"
@@ -85,8 +102,8 @@ export default function Step1Documents({ state }) {
               subtitle="J · G · C · Persona Jurídica"
               done={!!docs.rif}
               loading={scanning === 'rif'}
-              onClick={() => simulateOCR('rif')}
-              extractedLabel={docs.rif?.documento}
+              onFile={(e) => handleFileSelect('rif', e)}
+              extractedLabel={tomador?.documento && !isPersonaNatural ? tomador.documento : null}
             />
           </div>
 
@@ -118,25 +135,51 @@ export default function Step1Documents({ state }) {
             title="Subir Carnet de Circulación"
             subtitle="JPG, PNG o PDF · máx 10MB"
             done={!!docs.carnet}
-            loading={scanning === 'carnet'}
-            onClick={() => simulateOCR('carnet')}
+            loading={scanning === 'certificado'}
+            onFile={(e) => handleFileSelect('certificado', e)}
             extractedLabel={
-              docs.carnet
-                ? `${docs.carnet.placa} · ${docs.carnet.marca} ${docs.carnet.modelo}`
+              vehiculo?.placa
+                ? `${vehiculo.placa} · ${vehiculo.marca} ${vehiculo.modelo}`
                 : null
             }
           />
 
-          {docs.carnet && (
+          {docs.carnet && vehiculo?.marca && (
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-primary-fixed/30 rounded-xl animate-fade-in">
-              <Field label="Placa" value={docs.carnet.placa} mono />
-              <Field label="Marca" value={docs.carnet.marca} />
-              <Field label="Modelo" value={docs.carnet.modelo} />
-              <Field label="Año" value={docs.carnet.anio} />
-              <Field label="Color" value={docs.carnet.color} />
-              <Field label="Tipo" value={docs.carnet.tipo} />
-              <Field label="Puestos" value={docs.carnet.puestos} />
-              <Field label="Serial" value={docs.carnet.serial} mono />
+              <Field label="Placa" value={vehiculo.placa} mono />
+              <Field label="Marca" value={vehiculo.marca} />
+              <Field label="Modelo" value={vehiculo.modelo} />
+              <Field label="Año" value={vehiculo.anio} />
+              <Field label="Color" value={vehiculo.color} />
+              <Field label="Tipo" value={vehiculo.tipo} />
+              <Field label="Puestos" value={vehiculo.puestos} />
+              <Field label="Serial" value={vehiculo.serial} mono />
+            </div>
+          )}
+
+          {is0km && (
+            <div className="mt-4 p-4 border border-accent-300/30 bg-accent-50/5 rounded-xl animate-fade-in">
+              <div className="flex items-center gap-2 mb-2">
+                <Icon name="workspace_premium" className="text-accent-300" filled />
+                <h4 className="font-bold text-on-surface">Vehículo 0km Detectado</h4>
+              </div>
+              <p className="text-body-md text-on-surface-variant mb-3">
+                Para asegurar un vehículo del año {vehiculo.anio}, se requiere el Certificado de Origen.
+              </p>
+              <UploadCard
+                icon="verified"
+                title="Certificado de Origen"
+                subtitle="Requerido para vehículos 0km"
+                done={!!docs.certificadoOrigen}
+                loading={scanning === 'origen'}
+                onFile={(e) => {
+                  if (e.target.files?.[0]) {
+                    setDocs({ ...docs, certificadoOrigen: e.target.files[0] })
+                    toast.success('Certificado de Origen cargado', { title: 'Completado' })
+                  }
+                }}
+                extractedLabel={docs.certificadoOrigen ? 'Documento cargado' : null}
+              />
             </div>
           )}
         </div>
@@ -199,20 +242,24 @@ export default function Step1Documents({ state }) {
   )
 }
 
-function UploadCard({ icon, title, subtitle, done, loading, onClick, extractedLabel }) {
+function UploadCard({ icon, title, subtitle, done, loading, onFile, extractedLabel }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={loading}
-      className={`relative overflow-hidden rounded-xl border-2 border-dashed p-3 transition-all text-left flex items-center gap-3 active:scale-[0.99] ${
+    <label
+      className={`relative overflow-hidden rounded-xl border-2 border-dashed p-3 transition-all text-left flex items-center gap-3 cursor-pointer active:scale-[0.99] ${
         done
           ? 'border-success bg-success-container/30'
           : loading
-          ? 'border-primary bg-primary-fixed/40'
+          ? 'border-primary bg-primary-fixed/40 cursor-wait'
           : 'border-outline-variant/70 hover:border-primary hover:bg-primary-fixed/20'
       }`}
     >
+      <input 
+        type="file" 
+        className="hidden" 
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        onChange={onFile}
+        disabled={loading}
+      />
       {loading && (
         <div className="absolute inset-x-0 bottom-0 h-1 bg-primary/20 overflow-hidden">
           <div className="h-full w-1/2 bg-gradient-accent animate-shimmer rounded-r-full" />
@@ -242,7 +289,7 @@ function UploadCard({ icon, title, subtitle, done, loading, onClick, extractedLa
           filled={done}
         />
       )}
-    </button>
+    </label>
   )
 }
 

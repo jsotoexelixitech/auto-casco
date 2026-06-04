@@ -221,13 +221,27 @@ export function determinarPlan(photos) {
     }
   }
 
-  // ── Regla 4: ≥ minBuenasAmplia → Cobertura Amplia sin deducible + Pérdida Total ──
+  // ── Regla 4: ≥ minBuenasAmplia → Cobertura Amplia (con deducible si hay observancias) ──
+  const tieneObservancias = regulares > 0 || malas > 0;
+  
+  if (tieneObservancias) {
+    const pctDano = calcularDeducible({ regulares, malas }, cfg)
+    return {
+      plan: PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE,
+      planesDisponibles: [PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE, PLANES.PERDIDA_TOTAL],
+      elegible: true,
+      piezas,
+      deducible: pctDano,
+      motivo: `El vehículo tiene suficientes piezas buenas (${buenas}), pero presenta observancias menores. Cobertura Amplia disponible con deducible del ${pctDano}%.`,
+    }
+  }
+
   return {
     plan: PLANES.COBERTURA_AMPLIA,
     planesDisponibles: [PLANES.COBERTURA_AMPLIA, PLANES.PERDIDA_TOTAL],
     elegible: true,
     piezas,
     deducible: null,
-    motivo: `Excelente estado: ${buenas} piezas buenas (≥ ${minBuenasAmplia}). Puede optar a Cobertura Amplia sin deducible o Pérdida Total.`,
+    motivo: `Excelente estado: ${buenas} piezas buenas, sin ninguna observancia. Puede optar a Cobertura Amplia sin deducible o Pérdida Total.`,
   }
 }

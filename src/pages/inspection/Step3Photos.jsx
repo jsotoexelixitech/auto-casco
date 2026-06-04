@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import Icon from '../../components/ui/Icon'
 import StatusChip from '../../components/ui/StatusChip'
-import { getActiveSequences } from '../../utils/sequencesConfig'
+import { getDynamicSequences } from '../../utils/sequencesConfig'
 import CarDiagram from '../../components/inspection/CarDiagram'
 import { useToast } from '../../context/ToastContext'
 import {
@@ -50,10 +50,8 @@ export default function Step3Photos({ state }) {
   const galleryInputRef = useRef(null)
 
   const tipoVehiculo = vehiculo?.tipo || 'Particular'
-  // Use active sequences from Config IA, then filter by vehicle type
-  const visibleSequences = getActiveSequences().filter(
-    (s) => !s.excludeVehicleTypes?.includes(tipoVehiculo),
-  )
+  
+  const visibleSequences = getDynamicSequences(vehiculo, photos)
 
   const [activeSeq, setActiveSeq] = useState(visibleSequences[0]?.id)
   const seq = visibleSequences.find((s) => s.id === activeSeq) || visibleSequences[0]
@@ -121,7 +119,15 @@ export default function Step3Photos({ state }) {
         }
       }
 
-      setPhoto(activeSeq, { analyzing: false, analyzed: true, placa: null, placaMatch: null, issues: [] })
+      setPhoto(activeSeq, { 
+        analyzing: false, 
+        analyzed: true, 
+        placa: null, 
+        placaMatch: null, 
+        issues: [],
+        coincideModelo: analysis.coincideModelo !== false,
+        motivoNoCoincide: analysis.motivoNoCoincide
+      })
       toast.success('Foto analizada correctamente', { title: 'IA · Listo' })
     } catch (err) {
       console.error('[handleCapture] Error en análisis IA:', err)
@@ -162,14 +168,14 @@ export default function Step3Photos({ state }) {
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-headline-md text-on-surface">Secuencias fotográficas</h3>
           <span className="text-caption font-bold bg-primary text-on-primary px-2.5 py-1 rounded-full">
-            {completed} / {visibleSequences.length}
+            {completed} / {Math.max(visibleSequences.length, 10)}
           </span>
         </div>
         <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden mb-3">
           <div
             className="h-full rounded-full transition-all"
             style={{
-              width: `${(completed / visibleSequences.length) * 100}%`,
+              width: `${(completed / Math.max(visibleSequences.length, 10)) * 100}%`,
               background: 'linear-gradient(to right, #0F1A5A, #E84F51)',
             }}
           />
@@ -261,6 +267,27 @@ export default function Step3Photos({ state }) {
               <StatusChip tone="success" status="Analizada" size="sm" className="shrink-0" />
             )}
           </div>
+
+          {photoState.coincideModelo === false && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-900 mb-2 mt-2">
+              <Icon name="error" className="text-[20px] shrink-0 text-red-600" filled />
+              <div>
+                <p className="font-bold text-label-md mb-0.5">Discrepancia de Vehículo</p>
+                <p className="text-caption sm:text-body-md leading-snug">
+                  {photoState.motivoNoCoincide || "La IA detectó que el vehículo en la foto no coincide con la marca/modelo indicados."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {seq.isDynamicDetail && (
+            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-900 mb-2 mt-2">
+              <Icon name="warning" className="text-[20px] shrink-0 text-amber-600" filled />
+              <p className="text-caption sm:text-body-md leading-snug">
+                La IA detectó una observación en <strong>{seq.piezas[0]}</strong>. Por favor, toma una foto más cercana para detallar el estado.
+              </p>
+            </div>
+          )}
 
           {/* Optional pieces notice */}
           {seq.piezasOpcionales?.length > 0 && (

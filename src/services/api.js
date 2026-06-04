@@ -78,6 +78,11 @@ async function request(method, path, body) {
   const json = await res.json().catch(() => ({}))
 
   if (!res.ok) {
+    // 401 = token inválido o vencido → limpiar para no seguir enviando requests con él
+    if (res.status === 401) {
+      clearToken()
+      backendAvailable = false   // cortar los requests siguientes en esta sesión
+    }
     const msg = json?.message ?? json?.error ?? `HTTP ${res.status}`
     throw new ApiError(res.status, Array.isArray(msg) ? msg.join('. ') : msg)
   }
