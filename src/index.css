@@ -386,3 +386,5 @@ textarea {
     bottom: 0;   /* desktop: sticky resets this */
   }
 }
+@ k e y f r a m e s   s c a n n e r   {   0 %   {   t o p :   0 ;   }   5 0 %   {   t o p :   1 0 0 % ;   }   1 0 0 %   {   t o p :   0 ;   }   }   . a n i m a t e - s c a n n e r   {   a n i m a t i o n :   s c a n n e r   2 s   e a s e - i n - o u t   i n f i n i t e ;   }  
+ 
