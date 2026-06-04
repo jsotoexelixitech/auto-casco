@@ -49,27 +49,30 @@ export function getDynamicSequences(vehiculo, photos) {
     (s) => !s.excludeVehicleTypes?.includes(tipoVehiculo)
   )
 
-  // 2. Generate dynamic detail sequences based on analysis
-  const detailSequences = []
-  if (photos) {
-    for (const [seqId, photoData] of Object.entries(photos)) {
-      if (photoData.analyzed && photoData.piezas) {
-        for (const [pieza, data] of Object.entries(photoData.piezas)) {
-          if (data.estado === 'R' || data.estado === 'M') {
-            detailSequences.push({
-              id: `seq-detail-${seqId}-${pieza.replace(/[\s./-]+/g, '')}`,
-              nombre: `Detalle: ${pieza}`,
-              descripcion: `Foto detallada de la observación en ${pieza}.`,
-              icon: 'zoom_in',
-              diagramZone: 'damages',
-              piezas: [pieza],
-              isDynamicDetail: true,
-            })
-          }
+  const result = []
+
+  for (const baseSeq of baseSequences) {
+    result.push(baseSeq)
+    
+    // Check if this base sequence has generated any details
+    const photoData = photos?.[baseSeq.id]
+    if (photoData && photoData.analyzed && photoData.piezas) {
+      for (const [pieza, data] of Object.entries(photoData.piezas)) {
+        if (data.estado === 'R' || data.estado === 'M') {
+          result.push({
+            id: `seq-detail-${baseSeq.id}-${pieza.replace(/[\s./-]+/g, '')}`,
+            nombre: `Detalle: ${pieza}`,
+            descripcion: `Foto detallada de la observación en ${pieza} (Requerida).`,
+            icon: 'zoom_in',
+            diagramZone: 'damages',
+            piezas: [pieza],
+            isDynamicDetail: true,
+            parentSeqId: baseSeq.id
+          })
         }
       }
     }
   }
 
-  return [...baseSequences, ...detailSequences]
+  return result
 }

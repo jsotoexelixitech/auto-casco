@@ -149,6 +149,16 @@ export default function Step3Photos({ state }) {
     if (next) setActiveSeq(next.id)
   }
 
+  const handleTabClick = (s, i) => {
+    const firstUncompletedIdx = visibleSequences.findIndex(x => !photos[x.id]?.uploaded)
+    // Permite navegar a secuencias anteriores o a la próxima disponible, pero no saltar
+    if (firstUncompletedIdx !== -1 && i > firstUncompletedIdx && !photos[s.id]?.uploaded) {
+      toast.error('Debes capturar las fotos pendientes (incluyendo detalles) antes de avanzar.', { title: 'Acción requerida' })
+      return
+    }
+    setActiveSeq(s.id)
+  }
+
   if (!seq) return null
 
   return (
@@ -189,7 +199,7 @@ export default function Step3Photos({ state }) {
               <button
                 key={s.id}
                 data-seq={s.id}
-                onClick={() => setActiveSeq(s.id)}
+                onClick={() => handleTabClick(s, i)}
                 className={clsx(
                   'shrink-0 snap-start flex items-center gap-2 px-3 min-h-[44px] py-2 rounded-full border-2 transition-all',
                   active
