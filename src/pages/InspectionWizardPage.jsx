@@ -56,6 +56,21 @@ export default function InspectionWizardPage() {
   const hayFotosAnalizadas = piezasActuales.analizadas > 0
 
   const next = () => {
+    if (step === 0) {
+      if (!state.docs.cedula && !state.docs.rif) {
+        toast.error('Carga tu Cédula o RIF para continuar.', { title: 'Acción requerida' })
+        return
+      }
+      if (!state.docs.carnet) {
+        toast.error('Carga tu Carnet de Circulación para continuar.', { title: 'Acción requerida' })
+        return
+      }
+      if (state.vehiculo.is0km && !state.docs.certificadoOrigen) {
+        toast.error('Para vehículos 0km debes cargar el Certificado de Origen.', { title: 'Acción requerida' })
+        return
+      }
+    }
+
     if (step === 2 && !hayFotosAnalizadas) {
       toast.error('Sube al menos una foto para que la IA analice tu vehículo antes de continuar.', { title: 'Fotos requeridas' })
       return

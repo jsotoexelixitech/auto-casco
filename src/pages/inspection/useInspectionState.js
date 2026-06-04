@@ -47,6 +47,7 @@ export function useInspectionState() {
     tipo: 'Particular',
     puestos: '',
     kilometraje: '',
+    is0km: false,
   })
   const [ubicacion, setUbicacion] = useState({
     lat: null,

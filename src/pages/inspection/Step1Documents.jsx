@@ -8,8 +8,7 @@ export default function Step1Documents({ state }) {
   const { docs, setDocs, tomador, setTomador, vehiculo, setVehiculo } = state
   const toast = useToast()
   const [scanning, setScanning] = useState(null)
-
-  const handleFileSelect = async (kind, e) => {
+  const [tipoPersona, setTipoPersona] = useState('natural') // 'natural' | 'juridica'
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -69,8 +68,7 @@ export default function Step1Documents({ state }) {
     }
   }
 
-  const isPersonaNatural = docs.naturaleza === 'natural'
-  const is0km = vehiculo?.anio && parseInt(vehiculo.anio) >= new Date().getFullYear()
+  const isPersonaNatural = docs.naturaleza === 'natural' || tipoPersona === 'natural'
 
 
   return (
@@ -86,25 +84,56 @@ export default function Step1Documents({ state }) {
             Carga la cédula o el RIF del titular. El sistema detecta si es persona
             natural (V/E) o jurídica (J/G/C).
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <UploadCard
-              icon="badge"
-              title="Cédula de Identidad"
-              subtitle="V- · E- · Persona Natural"
-              done={!!docs.cedula}
-              loading={scanning === 'cedula'}
-              onFile={(e) => handleFileSelect('cedula', e)}
-              extractedLabel={tomador?.documento && isPersonaNatural ? tomador.documento : null}
-            />
-            <UploadCard
-              icon="domain"
-              title="RIF"
-              subtitle="J · G · C · Persona Jurídica"
-              done={!!docs.rif}
-              loading={scanning === 'rif'}
-              onFile={(e) => handleFileSelect('rif', e)}
-              extractedLabel={tomador?.documento && !isPersonaNatural ? tomador.documento : null}
-            />
+          <div className="flex items-center gap-2 mb-4 bg-surface-container/50 p-1 rounded-lg w-max">
+            <button
+              onClick={() => setTipoPersona('natural')}
+              className={clsx('px-4 py-1.5 rounded-md text-sm font-bold transition-all', tipoPersona === 'natural' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:bg-white/50')}
+            >
+              Persona Natural
+            </button>
+            <button
+              onClick={() => setTipoPersona('juridica')}
+              className={clsx('px-4 py-1.5 rounded-md text-sm font-bold transition-all', tipoPersona === 'juridica' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:bg-white/50')}
+            >
+              Persona Jurídica
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {tipoPersona === 'natural' ? (
+              <UploadCard
+                icon="badge"
+                title="Cédula de Identidad"
+                subtitle="V- · E- · JPG o PDF"
+                done={!!docs.cedula}
+                loading={scanning === 'cedula'}
+                onFile={(e) => handleFileSelect('cedula', e)}
+                extractedLabel={tomador?.documento && isPersonaNatural ? tomador.documento : null}
+              />
+            ) : (
+              <UploadCard
+                icon="domain"
+                title="Registro de Información Fiscal"
+                subtitle="J · G · C · JPG o PDF"
+                done={!!docs.rif}
+                loading={scanning === 'rif'}
+                onFile={(e) => handleFileSelect('rif', e)}
+                extractedLabel={tomador?.documento && !isPersonaNatural ? tomador.documento : null}
+              />
+            )}
+            
+            {/* Formulario rápido al lado de la carga del doc */}
+            <div className="flex flex-col gap-3 justify-center">
+              {tipoPersona === 'natural' ? (
+                <>
+                  <FormField label="Nombres" value={tomador.nombres} onChange={(v) => setTomador({ ...tomador, nombres: v })} />
+                  <FormField label="Apellidos" value={tomador.apellidos} onChange={(v) => setTomador({ ...tomador, apellidos: v })} />
+                </>
+              ) : (
+                <FormField label="Razón Social" value={tomador.razonSocial} onChange={(v) => setTomador({ ...tomador, razonSocial: v })} />
+              )}
+              <FormField label="Documento (Cédula/RIF)" value={tomador.documento} onChange={(v) => setTomador({ ...tomador, documento: v })} />
+            </div>
           </div>
 
           {(docs.cedula || docs.rif) && (
@@ -157,48 +186,67 @@ export default function Step1Documents({ state }) {
             </div>
           )}
 
-          {is0km && (
-            <div className="mt-4 p-4 border border-accent-300/30 bg-accent-50/5 rounded-xl animate-fade-in">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon name="workspace_premium" className="text-accent-300" filled />
-                <h4 className="font-bold text-on-surface">Vehículo 0km Detectado</h4>
+          <div className="mt-4 pt-4 border-t border-outline-variant/50">
+            <label className="flex items-center gap-3 cursor-pointer group w-max">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={vehiculo?.is0km || false}
+                  onChange={(e) => {
+                    const is0km = e.target.checked
+                    setVehiculo({ ...vehiculo, is0km })
+                    if (!is0km) setDocs({ ...docs, certificadoOrigen: null })
+                  }}
+                />
+                <div className="w-6 h-6 rounded border-2 border-outline-variant peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
+                  <Icon name="check" className="text-white text-[18px] opacity-0 peer-checked:opacity-100 transition-opacity" />
+                </div>
               </div>
-              <p className="text-body-md text-on-surface-variant mb-3">
-                Para asegurar un vehículo del año {vehiculo.anio}, se requiere el Certificado de Origen.
-              </p>
-              <UploadCard
-                icon="verified"
-                title="Certificado de Origen"
-                subtitle="Requerido para vehículos 0km"
-                done={!!docs.certificadoOrigen}
-                loading={scanning === 'origen'}
-                onFile={(e) => {
-                  if (e.target.files?.[0]) {
-                    setDocs({ ...docs, certificadoOrigen: e.target.files[0] })
-                    toast.success('Certificado de Origen cargado', { title: 'Completado' })
-                  }
-                }}
-                extractedLabel={docs.certificadoOrigen ? 'Documento cargado' : null}
-              />
+              <span className="font-bold text-on-surface group-hover:text-primary transition-colors">
+                Mi vehículo es 0km (Nuevo)
+              </span>
+            </label>
+          </div>
+
+          {vehiculo?.is0km && (
+            <div className="mt-4 p-4 border-2 border-accent-300/30 bg-accent-50/20 rounded-xl animate-fade-in flex flex-col sm:flex-row gap-4 items-center">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon name="workspace_premium" className="text-accent-500 text-[20px]" filled />
+                  <h4 className="font-bold text-on-surface">Certificado de Origen</h4>
+                </div>
+                <p className="text-sm text-on-surface-variant">
+                  Requisito obligatorio para asegurar vehículos 0km.
+                </p>
+              </div>
+              <div className="w-full sm:w-64">
+                <UploadCard
+                  icon="verified"
+                  title="Subir Certificado"
+                  subtitle="PDF o Imagen"
+                  done={!!docs.certificadoOrigen}
+                  loading={scanning === 'origen'}
+                  onFile={(e) => {
+                    if (e.target.files?.[0]) {
+                      setDocs({ ...docs, certificadoOrigen: e.target.files[0] })
+                      toast.success('Certificado de Origen cargado', { title: 'Completado' })
+                    }
+                  }}
+                  extractedLabel={docs.certificadoOrigen ? 'Documento cargado' : null}
+                />
+              </div>
             </div>
           )}
         </div>
 
+        {/* Card 3: Datos de Contacto */}
         <div className="card p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-3 pb-3 border-b border-outline-variant/50">
-            <Icon name="person" className="text-primary text-[24px]" filled />
-            <h3 className="text-headline-md text-on-surface">Datos del Tomador</h3>
+            <Icon name="contact_mail" className="text-primary text-[24px]" filled />
+            <h3 className="text-headline-md text-on-surface">Datos de Contacto</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {isPersonaNatural || !docs.naturaleza ? (
-              <>
-                <FormField label="Nombres" value={tomador.nombres} onChange={(v) => setTomador({ ...tomador, nombres: v })} />
-                <FormField label="Apellidos" value={tomador.apellidos} onChange={(v) => setTomador({ ...tomador, apellidos: v })} />
-              </>
-            ) : (
-              <FormField className="sm:col-span-2" label="Razón Social" value={tomador.razonSocial} onChange={(v) => setTomador({ ...tomador, razonSocial: v })} />
-            )}
-            <FormField label="Documento" value={tomador.documento} onChange={(v) => setTomador({ ...tomador, documento: v })} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Correo Electrónico" type="email" value={tomador.email} onChange={(v) => setTomador({ ...tomador, email: v })} placeholder="correo@ejemplo.com" />
             <FormField label="Teléfono Móvil" type="tel" value={tomador.telefono} onChange={(v) => setTomador({ ...tomador, telefono: v })} placeholder="(0414) 000-0000" />
             {isPersonaNatural && (
@@ -232,10 +280,10 @@ export default function Step1Documents({ state }) {
 
         <div className="card p-4 sm:p-5">
           <h4 className="text-headline-md text-on-surface mb-2">Checklist</h4>
-          <CheckItem done={docs.cedula || docs.rif} label="Documento de identidad cargado" />
-          <CheckItem done={!!docs.carnet} label="Carnet de circulación cargado" />
-          <CheckItem done={!!tomador.email} label="Correo de contacto" />
-          <CheckItem done={!!tomador.telefono} label="Teléfono de contacto" />
+          <CheckItem done={!!docs.cedula || !!docs.rif} label="Documento de identidad" />
+          <CheckItem done={!!docs.carnet} label="Carnet de circulación" />
+          {vehiculo?.is0km && <CheckItem done={!!docs.certificadoOrigen} label="Certificado de origen (0km)" />}
+          <CheckItem done={!!tomador.email && !!tomador.telefono} label="Datos de contacto" />
         </div>
       </aside>
     </div>
