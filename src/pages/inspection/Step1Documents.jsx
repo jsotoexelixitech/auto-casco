@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import clsx from 'clsx'
 import Icon from '../../components/ui/Icon'
 import { useToast } from '../../context/ToastContext'
 import { extractDocumentOcr } from '../../services/aiDocumentOcr'
