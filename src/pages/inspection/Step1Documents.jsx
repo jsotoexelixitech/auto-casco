@@ -9,6 +9,8 @@ export default function Step1Documents({ state }) {
   const toast = useToast()
   const [scanning, setScanning] = useState(null)
   const [tipoPersona, setTipoPersona] = useState('natural') // 'natural' | 'juridica'
+
+  const handleFileSelect = async (kind, e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
