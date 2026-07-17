@@ -16,6 +16,14 @@ export class CreatePolicyDto {
   @IsNotEmpty()
   vehicleId!: string;
 
+  @ApiPropertyOptional({
+    example: '18-1-0000079013',
+    description: 'Número Valrep (cnpoliza). Si no se envía, se genera POL-AAAA-NNN',
+  })
+  @IsOptional()
+  @IsString()
+  numero?: string;
+
   @ApiPropertyOptional({ example: 'cl0000planid' })
   @IsOptional()
   @IsString()
@@ -47,6 +55,18 @@ export class CreatePolicyDto {
   @IsNumber()
   @Min(0)
   prima?: number;
+
+  @ApiPropertyOptional({
+    example: 'https://qaapi.lamundialdeseguros.com/sis2000/poliza/18-1-0000079013/2025/6/',
+  })
+  @IsOptional()
+  @IsString()
+  urlPoliza?: string;
+
+  @ApiPropertyOptional({ example: '18-100272336' })
+  @IsOptional()
+  @IsString()
+  cnRecibo?: string;
 
   @ApiPropertyOptional({
     example: [{ nombre: 'Responsabilidad Civil', limite: 8000 }],

@@ -7,7 +7,20 @@ import { PLAN_TONES, BRAND } from '../../theme/tokens'
  */
 export default function PaymentSuccess({ payment, plan, inspectionNumber, navigate }) {
   const tone = PLAN_TONES[plan?.color] ?? PLAN_TONES.success
-  const policyNumber = `POL-2026-${String(900 + Math.floor(Math.random() * 99)).padStart(3, '0')}`
+  const policyNumber =
+    payment?.policyNumber
+    || payment?.emission?.poliza
+    || payment?.emission?.npoliza
+    || payment?.reference
+    || '—'
+  const totalLabel = Number.isFinite(Number(payment?.total))
+    ? `$${Number(payment.total).toFixed(2)}`
+    : null
+  const frecuenciaLabel =
+    payment?.frecuencia?.xdescripcion
+    || payment?.periodo
+    || plan?.frecuencia?.xdescripcion
+    || '—'
 
   return (
     <div className="flex flex-col gap-5 pb-8">
@@ -17,8 +30,8 @@ export default function PaymentSuccess({ payment, plan, inspectionNumber, naviga
           { label: 'Movimientos', to: '/movimientos' },
         ]}
         eyebrow={inspectionNumber}
-        title="¡Pago procesado!"
-        subtitle="Tu póliza ha sido emitida correctamente"
+        title="¡Póliza emitida!"
+        subtitle="Tu pago fue confirmado y la póliza quedó activa"
       />
 
       {/* ── Success hero ────────────────────────────────────────────── */}
@@ -37,11 +50,12 @@ export default function PaymentSuccess({ payment, plan, inspectionNumber, naviga
           </div>
           <div>
             <h1 className="text-display-md font-bold leading-tight" style={{ color: tone.fg }}>
-              ¡Listo! 🎉
+              ¡Listo!
             </h1>
             <p className="text-body-md mt-2 max-w-md mx-auto" style={{ color: tone.fg }}>
-              Tu pago de <strong>${payment?.total?.toFixed(2)}</strong> fue procesado correctamente
-              y tu póliza está activa.
+              {totalLabel
+                ? <>Tu pago de <strong>{totalLabel}</strong> fue procesado correctamente y tu póliza está activa.</>
+                : 'Tu póliza fue emitida correctamente y ya está activa.'}
             </p>
           </div>
         </div>
@@ -52,13 +66,13 @@ export default function PaymentSuccess({ payment, plan, inspectionNumber, naviga
         <InfoCard
           icon="policy"
           label="Número de póliza"
-          value={policyNumber}
+          value={String(policyNumber)}
           mono
           tone={tone}
         />
         <InfoCard
           icon="receipt_long"
-          label="Referencia de pago"
+          label="Referencia"
           value={payment?.reference ?? '—'}
           mono
           tone={tone}
@@ -72,7 +86,7 @@ export default function PaymentSuccess({ payment, plan, inspectionNumber, naviga
         <InfoCard
           icon="event_repeat"
           label="Frecuencia"
-          value={(payment?.periodo ?? 'mensual').replace(/^./, (c) => c.toUpperCase())}
+          value={String(frecuenciaLabel)}
           tone={tone}
         />
       </div>

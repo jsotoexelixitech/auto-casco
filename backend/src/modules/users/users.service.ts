@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { requireCorrelativeId } from '../../common/utils/ids';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const PUBLIC_SELECT = {
@@ -27,9 +28,10 @@ export class UsersService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string | number) {
+    const userId = requireCorrelativeId(id, 'Usuario');
     const user = await this.prisma.user.findUnique({
-      where: { id },
+      where: { id: userId },
       select: PUBLIC_SELECT,
     });
     if (!user) throw new NotFoundException('Usuario no encontrado');
@@ -37,7 +39,7 @@ export class UsersService {
   }
 
   async update(
-    id: string,
+    id: string | number,
     data: Partial<{
       name: string;
       phone: string;
@@ -46,18 +48,18 @@ export class UsersService {
       avatar: string;
     }>,
   ) {
-    await this.findOne(id);
+    const current = await this.findOne(id);
     return this.prisma.user.update({
-      where: { id },
+      where: { id: current.id },
       data,
       select: PUBLIC_SELECT,
     });
   }
 
-  async deactivate(id: string) {
-    await this.findOne(id);
+  async deactivate(id: string | number) {
+    const current = await this.findOne(id);
     return this.prisma.user.update({
-      where: { id },
+      where: { id: current.id },
       data: { active: false },
       select: PUBLIC_SELECT,
     });

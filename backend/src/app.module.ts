@@ -15,6 +15,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { SiniestrosModule } from './modules/siniestros/siniestros.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { HealthModule } from './modules/health/health.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { HealthModule } from './modules/health/health.module';
     SiniestrosModule,
     PlansModule,
     HealthModule,
+    AiModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

@@ -9,10 +9,11 @@ import { useData } from '../context/DataContext'
 import { downloadPdf } from '../utils/downloadPdf'
 import { useInspectionState } from './inspection/useInspectionState'
 import { determinarPlan, calcularPiezas } from '../utils/planEngine'
-import { getDynamicSequences } from '../utils/sequencesConfig'
+import { getDynamicSequences, getSequenceCompletionStats } from '../utils/sequencesConfig'
 import ResultadoInspeccion from '../components/emission/ResultadoInspeccion'
 import Step3Photos from './inspection/Step3Photos'
 import { extractDocumentOcr } from '../services/aiDocumentOcr'
+import { OcrDocumentInvalidError } from '../utils/ocrValidation'
 import { readFileAsBase64 } from '../services/aiVehicleAnalysis'
 
 // ─── Pasos del wizard unificado ───────────────────────────────────────────────
@@ -52,6 +53,7 @@ export default function EmissionPage() {
   const [emitting, setEmitting] = useState(false)
   const [emitted, setEmitted] = useState(null)
   const [ocrScanning, setOcrScanning] = useState(false)
+  const [ocrWarning, setOcrWarning] = useState(null)
 
   // ── Resultado IA (calculado desde fotos) ──
   const resultado = useMemo(() => determinarPlan(inspState.photos), [inspState.photos])
@@ -78,15 +80,13 @@ export default function EmissionPage() {
   // ── Verificación fotos antes de avanzar al resultado ──
   const handleInspNext = () => {
     const visibleSequences = getDynamicSequences(inspState.vehiculo, inspState.photos)
-    const completed = visibleSequences.filter((s) => inspState.photos[s.id]?.uploaded).length
-    
-    if (completed < 10) {
-      toast.error(`Debes tomar al menos 10 fotos. Llevas ${completed}.`, { title: 'Fotos insuficientes' })
-      return
-    }
+    const completion = getSequenceCompletionStats(visibleSequences, inspState.photos)
 
-    if (completed < visibleSequences.length) {
-      toast.error(`Te faltan fotos por capturar (incluyendo detalles de daños). Llevas ${completed} de ${visibleSequences.length}.`, { title: 'Inspección incompleta' })
+    if (!completion.allRequiredComplete) {
+      toast.error(
+        `Debes completar todas las fotos obligatorias legibles. Llevas ${completion.requiredAnalyzed} de ${completion.requiredTotal} (las opcionales no cuentan).`,
+        { title: 'Inspección incompleta' },
+      )
       return
     }
 
@@ -104,6 +104,7 @@ export default function EmissionPage() {
     if (!file) return
 
     setOcrScanning(true)
+    setOcrWarning(null)
     toast.info('Extrayendo datos con OCR…', { title: 'Análisis IA en curso' })
     try {
       const base64 = await readFileAsBase64(file)
@@ -120,8 +121,13 @@ export default function EmissionPage() {
       })
       toast.success('Datos extraídos del documento.', { title: 'OCR completado' })
     } catch (err) {
-      console.error(err)
-      toast.error(err.message, { title: 'Error en OCR' })
+      if (err instanceof OcrDocumentInvalidError) {
+        setOcrWarning(err.message)
+        toast.warning(err.message, { title: 'Documento no válido' })
+      } else {
+        console.error(err)
+        toast.error(err.message, { title: 'Error en OCR' })
+      }
     } finally {
       setOcrScanning(false)
       e.target.value = ''
@@ -353,6 +359,12 @@ export default function EmissionPage() {
                 {ocrScanning ? <><Icon name="hourglass_empty" className="animate-spin" /> Escaneando…</> : <><Icon name="document_scanner" /> OCR</>}
               </label>
             </div>
+            {ocrWarning && (
+              <div className="mb-4 flex gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 leading-snug">
+                <Icon name="warning" className="text-amber-600 shrink-0 mt-0.5" />
+                <span>{ocrWarning}</span>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Nombres" value={tomador.nombres} onChange={(v) => setTomador((t) => ({ ...t, nombres: v }))} placeholder="Juan Carlos" required />
               <Field label="Apellidos" value={tomador.apellidos} onChange={(v) => setTomador((t) => ({ ...t, apellidos: v }))} placeholder="Pérez Gómez" required />

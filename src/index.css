@@ -383,7 +383,7 @@ textarea {
 }
 @media (min-width: 768px) {
   .wizard-footer-sticky {
-    bottom: 0;   /* desktop: sticky resets this */
+    bottom: var(--main-bottom-pad, 24px);
   }
 }
 @keyframes scanner {

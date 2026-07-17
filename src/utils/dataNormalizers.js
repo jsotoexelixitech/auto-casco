@@ -3,6 +3,7 @@
  * Pure functions that transform API responses into the frontend domain shape.
  * Extracted from DataContext to keep the context lean and these functions testable.
  */
+import { stripPlanParenLabels } from './mapValrepPlanes'
 
 export function normalizePolicies(list) {
   return list.map((p) => ({
@@ -10,12 +11,14 @@ export function normalizePolicies(list) {
     dbId: p.id,
     id: p.numero ?? p.id,
     numero: p.numero ?? p.id,
-    plan: p.plan ?? p.planNombre ?? 'Estándar',
+    plan: stripPlanParenLabels(p.plan ?? p.planNombre ?? 'Estándar') || 'Estándar',
     modalidad: p.modalidad === 'dias' ? 'Por Días' : p.modalidad,
     vigenciaDesde: p.vigenciaDesde ?? p.fechaInicio?.slice(0, 10) ?? '',
     vigenciaHasta: p.vigenciaHasta ?? p.fechaFin?.slice(0, 10) ?? '',
     saldo: p.saldo ?? p.saldoDisponible ?? 0,
     coberturas: Array.isArray(p.coberturas) ? p.coberturas : [],
+    urlpoliza: p.urlpoliza ?? p.urlPoliza ?? null,
+    cnrecibo: p.cnrecibo ?? p.cnRecibo ?? null,
   }))
 }
 

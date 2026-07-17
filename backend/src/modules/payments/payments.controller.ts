@@ -9,7 +9,12 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthUser, CurrentUser } from '../../common/decorators/current-user.decorator';
-import { CreateMethodDto, TopupDto } from './dto/payments.dto';
+import { Public } from '../../common/decorators/public.decorator';
+import {
+  CreateCheckoutSsoDto,
+  CreateMethodDto,
+  TopupDto,
+} from './dto/payments.dto';
 import { PaymentsService } from './payments.service';
 
 @ApiTags('Payments')
@@ -52,5 +57,28 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Marcar método como principal' })
   setPrimary(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.svc.setPrimaryMethod(id, user.id);
+  }
+
+  /* ── Checkout Nexus Pagos (fase pruebas: públicos) ──────────────────── */
+
+  @Public()
+  @Post('checkout/sso')
+  @ApiOperation({ summary: 'Crear SSO de Pagos (Nexus) y devolver redirect_url del iframe' })
+  createCheckoutSso(@Body() dto: CreateCheckoutSsoDto) {
+    return this.svc.createCheckoutSso(dto);
+  }
+
+  @Public()
+  @Post('checkout/notify')
+  @ApiOperation({ summary: 'Webhook notifyUrl desde pagos-api' })
+  checkoutNotify(@Body() body: Record<string, unknown>) {
+    return this.svc.handleCheckoutNotify(body || {});
+  }
+
+  @Public()
+  @Get('checkout/:idOperacion')
+  @ApiOperation({ summary: 'Estado de un checkout por idOperacion' })
+  checkoutStatus(@Param('idOperacion') idOperacion: string) {
+    return this.svc.getCheckoutStatus(idOperacion);
   }
 }

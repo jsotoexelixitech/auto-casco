@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 import Icon from './Icon'
 
@@ -18,6 +19,7 @@ export default function Modal({
   children,
   footer,
   size = 'md',
+  headerSize = 'default',
   hideClose = false,
 }) {
   useEffect(() => {
@@ -41,12 +43,15 @@ export default function Modal({
     xl: 'max-w-4xl',
   }
 
-  return (
+  const hasTitleAndSubtitle = Boolean(title && subtitle)
+  const isCompactHeader = headerSize === 'compact'
+
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label={typeof title === 'string' ? title : 'Diálogo'}
-      className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in"
     >
       <div
         className="absolute inset-0 bg-brand-900/55 backdrop-blur-sm"
@@ -54,7 +59,7 @@ export default function Modal({
       />
       <div
         className={clsx(
-          'relative w-full bg-white rounded-t-2xl sm:rounded-2xl shadow-elev-2 border border-outline-variant/40 flex flex-col animate-slide-up max-h-[92vh] sm:max-h-[min(92vh,calc(100dvh-2rem))]',
+          'relative z-10 w-full bg-white rounded-2xl shadow-elev-2 border border-outline-variant/40 flex flex-col animate-slide-up max-h-[min(90dvh,calc(100dvh-2rem))]',
           sizes[size],
         )}
         style={{
@@ -62,20 +67,41 @@ export default function Modal({
         }}
       >
         {(title || icon || !hideClose) && (
-          <header className="flex items-start gap-3 p-4 sm:p-5 border-b border-outline-variant/40">
+          <header
+            className={clsx(
+              'shrink-0 flex gap-2.5 border-b border-outline-variant/40',
+              isCompactHeader ? 'p-3 sm:p-4' : 'p-4 sm:p-5 gap-3',
+              hasTitleAndSubtitle ? 'items-start' : 'items-center',
+            )}
+          >
             {icon && (
-              <div className="w-10 h-10 rounded-xl bg-primary-fixed text-primary flex items-center justify-center shrink-0">
-                <Icon name={icon} className="text-[22px]" filled />
+              <div
+                className={clsx(
+                  'bg-primary-fixed text-primary flex items-center justify-center shrink-0',
+                  isCompactHeader ? 'w-8 h-8 rounded-lg' : 'w-10 h-10 rounded-xl',
+                )}
+              >
+                <Icon name={icon} className={isCompactHeader ? 'text-[18px]' : 'text-[22px]'} filled />
               </div>
             )}
             <div className="flex-1 min-w-0">
               {title && (
-                <h3 className="text-headline-md text-on-surface leading-tight">
+                <h3
+                  className={clsx(
+                    'text-on-surface leading-tight',
+                    isCompactHeader ? 'text-label-md font-bold' : 'text-headline-md',
+                  )}
+                >
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="text-caption sm:text-body-md text-on-surface-variant mt-0.5">
+                <p
+                  className={clsx(
+                    'text-caption sm:text-body-md text-on-surface-variant',
+                    title && 'mt-0.5',
+                  )}
+                >
                   {subtitle}
                 </p>
               )}
@@ -83,7 +109,7 @@ export default function Modal({
             {!hideClose && (
               <button
                 onClick={onClose}
-                className="btn-icon -mr-1 -mt-1 shrink-0"
+                className={clsx('btn-icon shrink-0', isCompactHeader ? '-mr-1' : '-mr-1 -mt-1')}
                 aria-label="Cerrar"
               >
                 <Icon name="close" />
@@ -91,13 +117,21 @@ export default function Modal({
             )}
           </header>
         )}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5">{children}</div>
+        {children ? (
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5">{children}</div>
+        ) : null}
         {footer && (
-          <footer className="flex items-center justify-end gap-2 p-3 sm:p-4 border-t border-outline-variant/40 bg-surface-container-low/50 rounded-b-2xl">
+          <footer
+            className={clsx(
+              'shrink-0 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 p-3 sm:p-4 border-t border-outline-variant/40 bg-surface-container-low/50 rounded-b-2xl',
+              !children && 'border-t-0',
+            )}
+          >
             {footer}
           </footer>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

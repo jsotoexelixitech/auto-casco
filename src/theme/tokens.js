@@ -23,6 +23,41 @@ export const PLAN_TONES = {
   info:    { bg: '#EFF6FF', fg: '#1D4ED8', border: '#BFDBFE' },
 }
 
+/**
+ * Tono gradual rojo → ámbar → verde según % de piezas buenas.
+ * @param {number} pctBuenas 0–100
+ * @param {{ elegible?: boolean }} [opts]
+ */
+export function getAnalisisGradientTone(pctBuenas, { elegible = true } = {}) {
+  let pct = Math.max(0, Math.min(100, Number(pctBuenas) || 0))
+  if (!elegible) pct = Math.min(pct, 35)
+
+  const green  = { bg: [220, 252, 231], fg: [22, 163, 74],  border: [134, 239, 172] }
+  const amber  = { bg: [254, 243, 199], fg: [217, 119, 6],  border: [252, 211, 77] }
+  const red    = { bg: [254, 226, 226], fg: [220, 38, 38],  border: [252, 165, 165] }
+
+  const lerpChan = (a, b, t) => Math.round(a + (b - a) * t)
+  const lerpRgb = (a, b, t) => a.map((v, i) => lerpChan(v, b[i], t))
+  const toHex = ([r, g, b]) =>
+    `#${[r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')}`
+  const mix = (from, to, t) => ({
+    bg: toHex(lerpRgb(from.bg, to.bg, t)),
+    fg: toHex(lerpRgb(from.fg, to.fg, t)),
+    border: toHex(lerpRgb(from.border, to.border, t)),
+  })
+
+  const t = pct / 100
+  const tone = t >= 0.5
+    ? mix(amber, green, (t - 0.5) / 0.5)
+    : mix(red, amber, t / 0.5)
+
+  return {
+    ...tone,
+    pct,
+    icon: pct >= 72 ? 'task_alt' : pct >= 40 ? 'warning' : 'gpp_bad',
+  }
+}
+
 // ── Piece state colors ────────────────────────────────────────────────────────
 // B = Buena, R = Regular, M = Mala, NE = No Existe
 export const PIEZA_TONES = {
@@ -43,17 +78,19 @@ export const TIMING = {
 
 // ── Car diagram zone colors ───────────────────────────────────────────────────
 export const DIAGRAM_STATUS_FILL = {
-  active:  '#16a34a',
-  next:    '#86efac',
-  done:    BRAND.navy,
+  active:  BRAND.navy,   // capturando
+  next:    '#86A0E8',    // siguiente (azul suave)
+  ok:      '#16a34a',    // cargada sin daños
+  damaged: '#D97706',    // cargada con daños
   pending: '#e2e8f0',
   hidden:  'transparent',
 }
 
 export const DIAGRAM_STATUS_STROKE = {
-  active:  '#15803d',
-  next:    '#4ade80',
-  done:    BRAND.mid,
+  active:  BRAND.mid,
+  next:    '#4A6FCF',
+  ok:      '#15803d',
+  damaged: '#B45309',
   pending: '#cbd5e1',
   hidden:  'none',
 }

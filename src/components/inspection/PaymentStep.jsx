@@ -1,398 +1,207 @@
-import { useState } from 'react'
+import { useRef } from 'react'
 import clsx from 'clsx'
-import PageHeader from '../ui/PageHeader'
 import Icon from '../ui/Icon'
-import { PLAN_TONES, BRAND } from '../../theme/tokens'
+import { BRAND } from '../../theme/tokens'
+import { cuotaFromPrimaAnual, isFrecuenciaAnual } from '../../utils/primaFrecuencia'
+import { isPaymentCallbackUrl } from '../../utils/checkoutPago'
 
 /**
- * PaymentStep — simulated payment step shown after the AI analysis review.
- * Renders a payment-method selector + form pre-filled with demo data.
- * Calls onConfirm(payload) when the user confirms the payment.
+ * PaymentStep — resumen (plan + vehículo + tomador) e iframe SSO de pagos.
  */
-const BANCOS = [
-  { id: '0172', label: 'Bancamiga',    short: 'Banca Amiga',  color: '#0E7A3D' },
-  { id: '0171', label: 'Banco Activo', short: 'Banco Activo', color: '#E11D48' },
-]
-
-const PAYMENT_METHODS = [
-  { id: 'card',        label: 'Tarjeta de crédito/débito', icon: 'credit_card',     sub: 'Visa, Mastercard, Amex' },
-  { id: 'transfer',    label: 'Transferencia bancaria',    icon: 'account_balance', sub: 'Banca Amiga · Banco Activo' },
-  { id: 'pago-movil',  label: 'Pago móvil',                icon: 'phone_iphone',    sub: 'Bs. al instante' },
-  { id: 'otp',         label: 'Token OTP bancario',        icon: 'key',             sub: 'Código de un solo uso' },
-  { id: 'cash',        label: 'Pago en oficina',           icon: 'storefront',      sub: 'Oficina más cercana' },
-]
-
-const DEMO_CARD = {
-  titular:     'Carolina Rivas',
-  numero:      '4532 •••• •••• 1234',
-  expira:      '12/27',
-  cvv:         '•••',
-  banco:       'Bancamiga',
-}
-
-export default function PaymentStep({ plan, inspectionNumber, onConfirm, onBack }) {
-  const [method, setMethod]     = useState('card')
-  const [periodo, setPeriodo]   = useState('mensual')  // diaria | mensual | anual
-  const [accepting, setAccepting] = useState(true)
-  const [processing, setProcessing] = useState(false)
-  const [banco, setBanco]       = useState(BANCOS[0].id)  // banco para transferencia / pago-móvil / OTP
-  const [otpCode, setOtpCode]   = useState('')
+export default function PaymentStep({
+  plan,
+  tomador,
+  titular,
+  tomadorEsTitular = false,
+  vehiculo,
+  embedded = false,
+  onBack,
+  iframeUrl = '',
+  iframeLoading = false,
+  iframeError = '',
+  onRetryIframe,
+  /** Cuando el iframe navega a /pago/resultado (mismo origen). */
+  onIframeCallback,
+}) {
+  const iframeRef = useRef(null)
+  const personaTomador = (tomadorEsTitular && titular) ? titular : (tomador || titular || null)
 
   if (!plan) return null
 
-  const tone = PLAN_TONES[plan.color] ?? PLAN_TONES.success
-  const monto = plan.prima[periodo] ?? plan.prima.mensual
-  const impuesto = +(monto * 0.16).toFixed(2)
-  const total = +(monto + impuesto).toFixed(2)
+  const primaAnual = Number(plan.prima?.anual ?? plan.prima?.monto ?? 0)
+  const frecuencia = plan.frecuencia || null
+  const frecuenciaCodigo = frecuencia?.cvalor ?? plan.frecuenciaCodigo ?? null
+  const monto = frecuencia
+    ? cuotaFromPrimaAnual(primaAnual, frecuencia)
+    : Number(plan.prima?.cuota ?? plan.prima?.monto ?? primaAnual ?? 0)
+  const montoLabel = Number.isFinite(monto)
+    ? `$${Number(monto).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : '—'
+  const primaCaption = frecuencia
+    ? (isFrecuenciaAnual(frecuencia)
+      ? 'Prima anual'
+      : `Cuota ${String(frecuencia.xdescripcion || '').toLowerCase()}`)
+    : 'Prima'
 
-  const otpValido = method !== 'otp' || otpCode.length === 6
-  const canPay = accepting && !processing && otpValido
-
-  function handleConfirm() {
-    if (!canPay) return
-    setProcessing(true)
-    setTimeout(() => {
-      setProcessing(false)
-      onConfirm?.({
-        method,
-        periodo,
-        monto,
-        total,
-        banco: ['transfer', 'pago-movil', 'otp'].includes(method)
-          ? BANCOS.find((b) => b.id === banco)?.label
-          : null,
-        otpCode: method === 'otp' ? otpCode : null,
-        plan: plan.nombre,
-        reference: `PAY-${Date.now().toString().slice(-8)}`,
-      })
-    }, 1500)
+  function handleIframeLoad() {
+    if (!onIframeCallback || !iframeRef.current) return
+    try {
+      const href = iframeRef.current.contentWindow?.location?.href
+      if (href && isPaymentCallbackUrl(href)) {
+        onIframeCallback(href)
+      }
+    } catch {
+      // Cross-origin (portal Pagos): normal hasta que redirija a nuestro dominio
+    }
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-32 md:pb-8">
-      <PageHeader
-        breadcrumbs={[
-          { label: 'Inicio', to: '/dashboard' },
-          { label: 'Inspecciones', to: '/inspecciones' },
-          { label: inspectionNumber, to: '#' },
-          { label: 'Pago' },
-        ]}
-        eyebrow={inspectionNumber}
-        title="Confirmar pago"
-        subtitle="Selecciona tu método de pago y completa la suscripción"
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* ── Left: payment method + form ─────────────────────────── */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
-
-          {/* Method selector */}
-          <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
-            <h3 className="text-headline-md font-bold mb-3 flex items-center gap-2" style={{ color: BRAND.navy }}>
-              <Icon name="payments" className="text-[22px]" filled />
-              Método de pago
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {PAYMENT_METHODS.map((m) => {
-                const sel = method === m.id
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => setMethod(m.id)}
-                    className={clsx(
-                      'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
-                      sel
-                        ? 'shadow-sm'
-                        : 'hover:border-outline-variant border-outline-variant/40',
-                    )}
-                    style={sel ? { borderColor: BRAND.navy, backgroundColor: `${BRAND.navy}08` } : {}}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: sel ? BRAND.navy : '#EEF0FA', color: sel ? '#FFFFFF' : BRAND.navy }}
-                    >
-                      <Icon name={m.icon} className="text-[22px]" filled />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-on-surface text-label-md truncate">{m.label}</p>
-                      <p className="text-caption text-on-surface-variant truncate">{m.sub}</p>
-                    </div>
-                    {sel && <Icon name="check_circle" className="text-[20px] shrink-0" style={{ color: BRAND.navy }} filled />}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Card form (only when card selected) */}
-          {method === 'card' && (
-            <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-headline-md font-bold flex items-center gap-2" style={{ color: BRAND.navy }}>
-                  <Icon name="credit_card" className="text-[22px]" filled />
-                  Datos de la tarjeta
-                </h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-full">
-                  Demo
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Titular"      value={DEMO_CARD.titular} />
-                <Field label="Banco emisor" value={DEMO_CARD.banco} />
-                <Field label="Número de tarjeta" value={DEMO_CARD.numero} mono className="sm:col-span-2" />
-                <Field label="Vencimiento"  value={DEMO_CARD.expira} mono />
-                <Field label="CVV"          value={DEMO_CARD.cvv} mono />
-              </div>
-              <p className="text-caption text-on-surface-variant mt-3 flex items-center gap-1.5">
-                <Icon name="lock" className="text-[16px]" filled />
-                Tus datos están protegidos. Pago simulado con datos de prueba.
+    <div className={clsx('flex flex-col gap-5', embedded ? 'pb-2' : 'pb-32 md:pb-8')}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:items-stretch">
+        <div className="lg:col-span-4 flex flex-col gap-4 min-w-0">
+          <div
+            className="rounded-2xl p-4 sm:p-5 relative overflow-hidden text-white flex flex-col gap-3"
+            style={{ backgroundColor: '#0F1A5A', borderLeft: '4px solid #ACACAC' }}
+          >
+            <div className="relative">
+              <h2 className="text-headline-md font-bold text-white leading-tight">
+                Confirmación del Pago
+              </h2>
+              <p className="text-caption text-white/70 text-sm mt-0.5">
+                Realiza el pago en el portal para completar el proceso.
               </p>
             </div>
-          )}
-
-          {/* Transfer info */}
-          {method === 'transfer' && (
-            <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
-              <h3 className="text-headline-md font-bold mb-3 flex items-center gap-2" style={{ color: BRAND.navy }}>
-                <Icon name="account_balance" className="text-[22px]" filled />
-                Datos para transferencia
-              </h3>
-              <BancoSelector value={banco} onChange={setBanco} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                <Field label="Banco"          value={BANCOS.find((b) => b.id === banco).label} />
-                <Field label="Tipo de cuenta" value="Corriente" />
-                <Field label="Cuenta"         value={`${banco}-0000-00-0000000000`} mono className="sm:col-span-2" />
-                <Field label="RIF"            value="J-30000000-0" mono />
-                <Field label="Beneficiario"   value="La Mundial de Seguros" />
+            <hr className="my-2 border-white/20" />
+            <div className="relative flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                <Icon name={plan.icono || 'verified_user'} className="text-white text-[20px]" filled />
               </div>
-            </div>
-          )}
-
-          {/* Pago Móvil info */}
-          {method === 'pago-movil' && (
-            <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
-              <h3 className="text-headline-md font-bold mb-3 flex items-center gap-2" style={{ color: BRAND.navy }}>
-                <Icon name="phone_iphone" className="text-[22px]" filled />
-                Pago móvil
-              </h3>
-              <BancoSelector value={banco} onChange={setBanco} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                <Field label="Banco"     value={`${banco} — ${BANCOS.find((b) => b.id === banco).label}`} />
-                <Field label="Cédula"    value="V-12.345.678" mono />
-                <Field label="Teléfono"  value="0414-1234567" mono />
-                <Field label="Monto Bs." value={`${(total * 36.5).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`} />
-              </div>
-            </div>
-          )}
-
-          {/* OTP — Token bancario */}
-          {method === 'otp' && (
-            <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-headline-md font-bold flex items-center gap-2" style={{ color: BRAND.navy }}>
-                  <Icon name="key" className="text-[22px]" filled />
-                  Token OTP
-                </h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: '#DCFCE7', color: '#15803D' }}>
-                  Más seguro
-                </span>
-              </div>
-              <p className="text-caption text-on-surface-variant mb-3">
-                Recibirás un código de 6 dígitos en tu app bancaria o por SMS. Ingrésalo para confirmar el pago.
-              </p>
-              <BancoSelector value={banco} onChange={setBanco} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 mb-3">
-                <Field label="Banco emisor" value={BANCOS.find((b) => b.id === banco).label} />
-                <Field label="Cédula"       value="V-12.345.678" mono />
-                <Field label="Cuenta"       value={`${banco}-•••-••-••••••1234`} mono className="sm:col-span-2" />
-              </div>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                  Código OTP (6 dígitos)
-                </span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="• • • • • •"
-                  className="rounded-xl border-2 border-outline-variant/40 px-3 py-3 text-display-sm font-mono font-bold text-center tracking-[0.5em] text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-                />
-                <span className="text-caption text-on-surface-variant flex items-center gap-1 mt-0.5">
-                  <Icon name="schedule" className="text-[14px]" />
-                  El código expira en 60 segundos
-                </span>
-              </label>
-            </div>
-          )}
-
-          {/* Cash info */}
-          {method === 'cash' && (
-            <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
-              <h3 className="text-headline-md font-bold mb-3 flex items-center gap-2" style={{ color: BRAND.navy }}>
-                <Icon name="storefront" className="text-[22px]" filled />
-                Pago en oficina
-              </h3>
-              <p className="text-body-md text-on-surface-variant leading-relaxed">
-                Acércate a la oficina más cercana de La Mundial de Seguros con tu cédula y el código de referencia
-                que recibirás por correo. El pago se procesará en menos de 24 horas.
-              </p>
-            </div>
-          )}
-
-          {/* Periodo selector */}
-          <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
-            <h3 className="text-headline-md font-bold mb-3 flex items-center gap-2" style={{ color: BRAND.navy }}>
-              <Icon name="event_repeat" className="text-[22px]" filled />
-              Frecuencia
-            </h3>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'diaria',  label: 'Diaria',  prima: plan.prima.diaria },
-                { id: 'mensual', label: 'Mensual', prima: plan.prima.mensual },
-                { id: 'anual',   label: 'Anual',   prima: plan.prima.anual },
-              ].map((p) => {
-                const sel = periodo === p.id
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => setPeriodo(p.id)}
-                    className={clsx(
-                      'rounded-xl p-3 border-2 text-center transition-all',
-                      sel ? 'shadow-sm' : 'hover:border-outline-variant border-outline-variant/40',
-                    )}
-                    style={sel ? { borderColor: BRAND.navy, backgroundColor: `${BRAND.navy}08` } : {}}
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">
-                      {p.label}
-                    </p>
-                    <p className="text-headline-md font-bold" style={{ color: BRAND.navy }}>
-                      ${p.prima.toFixed(2)}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Right: summary ────────────────────────────────────────── */}
-        <div className="lg:col-span-1">
-          <div className="lg:sticky lg:top-4 rounded-2xl p-5 border-2 flex flex-col gap-4"
-            style={{ backgroundColor: tone.bg, borderColor: tone.border }}>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white/80 flex items-center justify-center shrink-0 shadow-sm"
-                style={{ color: tone.fg }}>
-                <Icon name={plan.icono} className="text-[26px]" filled />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: tone.fg }}>
-                  Plan seleccionado
-                </p>
-                <h3 className="text-headline-md font-bold leading-tight" style={{ color: tone.fg }}>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm uppercase tracking-widest opacity-70 mb-0.5">Plan seleccionado</p>
+                <h3 className="text-label-md sm:text-headline-md font-bold leading-tight break-words">
                   {plan.nombre}
                 </h3>
+                {(plan.subtitulo || plan.descripcion) && (
+                  <p className="text-sm text-white/70 mt-0.5 leading-snug line-clamp-2">
+                    {plan.subtitulo || plan.descripcion}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="bg-white/60 rounded-xl p-3 flex flex-col gap-1.5">
-              <Row label={`Prima ${periodo}`} value={`$${monto.toFixed(2)}`} fg={tone.fg} />
-              <Row label="IVA (16%)"          value={`$${impuesto.toFixed(2)}`} fg={tone.fg} />
-              <div className="border-t border-current/15 pt-1.5 mt-1">
-                <Row label="Total a pagar" value={`$${total.toFixed(2)}`} fg={tone.fg} bold />
+            <div className="relative bg-white/10 rounded-xl px-4 py-6 text-center backdrop-blur min-w-0">
+              <p className="text-display-lg font-bold leading-none tabular-nums text-white">
+                {montoLabel}
+              </p>
+            </div>
+
+            {(frecuencia?.xdescripcion || frecuenciaCodigo) && (
+              <div className="relative pt-3 border-t border-white/20">
+                <p className="text-sm font-bold uppercase tracking-wide text-white/70 mb-2">
+                  Frecuencia de pago
+                </p>
+                <div className="rounded-lg px-2.5 py-2.5 border-2 border-secondary bg-secondary text-white text-[12px] font-semibold text-center shadow-sm min-h-[44px] flex items-center justify-center">
+                  {frecuencia?.xdescripcion || frecuenciaCodigo}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {(vehiculo?.placa || vehiculo?.serial || vehiculo?.marca) && (
+            <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
+              <h3 className="text-label-md sm:text-headline-md text-on-surface mb-3 flex items-center gap-2">
+                <Icon name="directions_car" className="text-primary" filled /> Datos del Vehículo
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Marca" value={vehiculo?.marca} />
+                <Field label="Modelo" value={vehiculo?.modelo} />
+                <Field label="Color" value={vehiculo?.color} />
+                <Field label="Año" value={vehiculo?.anio} />
+                <Field label="Placa" value={vehiculo?.placa} mono />
+                <Field label="Serial" value={vehiculo?.serial} mono />
               </div>
             </div>
+          )}
 
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={accepting}
-                onChange={(e) => setAccepting(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded shrink-0 accent-current"
-                style={{ color: tone.fg }}
-              />
-              <span className="text-caption" style={{ color: tone.fg }}>
-                Acepto los <strong>términos y condiciones</strong> de La Mundial de Seguros y autorizo el cobro
-                recurrente con la frecuencia seleccionada.
-              </span>
-            </label>
-
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleConfirm}
-                disabled={!canPay}
-                className={clsx(
-                  'w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-body-md transition-all',
-                  canPay
-                    ? 'shadow-md hover:shadow-lg active:scale-[0.98] text-white'
-                    : 'opacity-50 cursor-not-allowed text-white',
-                )}
-                style={{ backgroundColor: tone.fg }}
-              >
-                {processing ? (
-                  <>
-                    <Icon name="autorenew" className="text-[20px] animate-spin" />
-                    Procesando pago…
-                  </>
-                ) : (
-                  <>
-                    <Icon name="lock" className="text-[18px]" filled />
-                    Pagar ${total.toFixed(2)}
-                  </>
-                )}
-              </button>
-              <button
-                onClick={onBack}
-                disabled={processing}
-                className="btn-soft w-full"
-              >
-                <Icon name="arrow_back" /> Volver al resultado
-              </button>
+          <div className="card p-4 sm:p-5" style={{ borderTop: `3px solid ${BRAND.navy}` }}>
+            <h3 className="text-label-md sm:text-headline-md text-on-surface mb-3 flex items-center gap-2">
+              <Icon name="person" className="text-primary" filled /> Datos del Tomador
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Nombres" value={personaTomador?.nombres} />
+              <Field label="Apellidos" value={personaTomador?.apellidos} />
+              <Field label="Documento" value={personaTomador?.documento} mono />
+              <Field label="Teléfono" value={personaTomador?.telefono} mono />
+              <Field label="Correo" value={personaTomador?.email} className="col-span-2" />
+              {tomadorEsTitular && (
+                <p className="col-span-2 text-caption text-primary">Mismo titular de la inspección</p>
+              )}
             </div>
+          </div>
 
-            <p className="text-[11px] text-center" style={{ color: tone.fg }}>
-              <Icon name="verified_user" className="text-[14px] inline-block mr-0.5" filled />
-              Conexión segura SSL · Pago simulado para demo
+          {!embedded && (
+            <button type="button" onClick={onBack} className="btn-soft w-full sm:w-auto self-start">
+              <Icon name="arrow_back" /> Volver al resultado
+            </button>
+          )}
+        </div>
+
+        <div className="lg:col-span-8 min-w-0 flex flex-col gap-3">
+          <div
+            className="card overflow-hidden flex flex-col flex-1 min-h-[480px] lg:min-h-0 h-full"
+            style={{ borderTop: `3px solid ${BRAND.navy}` }}
+          >
+            <div className="px-4 py-3 border-b border-outline-variant/30 flex items-center gap-2 shrink-0">
+              <Icon name="lock" className="text-[18px] text-primary" filled />
+              <div className="min-w-0 flex-1">
+                <p className="text-label-md font-bold text-primary truncate">Portal de pagos</p>
+                <p className="text-caption text-on-surface-variant truncate">
+                  Conexión segura · La Mundial de Seguros
+                </p>
+              </div>
+            </div>
+            <div className="relative flex-1 min-h-[360px] lg:min-h-0 w-full bg-surface-container-low overflow-hidden">
+              {iframeLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 bg-surface-container-low/90">
+                  <Icon name="progress_activity" className="text-[32px] text-primary animate-spin" />
+                  <p className="text-caption text-on-surface-variant">Preparando portal de pagos…</p>
+                </div>
+              )}
+              {iframeError && !iframeLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 p-4 text-center">
+                  <Icon name="error" className="text-[40px] text-error" filled />
+                  <p className="text-body-md text-on-surface-variant max-w-sm">{iframeError}</p>
+                  {onRetryIframe && (
+                    <button type="button" className="btn-primary" onClick={onRetryIframe}>
+                      Reintentar
+                    </button>
+                  )}
+                </div>
+              )}
+              {iframeUrl && !iframeError && (
+                <iframe
+                  ref={iframeRef}
+                  title="Sistema de pagos La Mundial"
+                  src={iframeUrl}
+                  className="absolute inset-0 w-full h-full border-0"
+                  allow="payment *; clipboard-write"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  onLoad={handleIframeLoad}
+                />
+              )}
+            </div>
+          </div>
+
+          <div
+            className="rounded-xl px-3.5 py-3 flex items-start gap-2 bg-amber-50 border border-amber-200 italic"
+          >
+            <Icon name="info" className="text-[20px] text-amber-600 shrink-0 mt-0.5" filled />
+              <p className="text-caption text-sm text-amber-600 leading-snug min-w-0">
+              Completa el proceso de pago para continuar.
             </p>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function BancoSelector({ value, onChange }) {
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      {BANCOS.map((b) => {
-        const sel = b.id === value
-        return (
-          <button
-            key={b.id}
-            onClick={() => onChange(b.id)}
-            className={clsx(
-              'flex items-center gap-2 rounded-xl p-2.5 border-2 transition-all text-left',
-              sel ? 'shadow-sm' : 'hover:border-outline-variant border-outline-variant/40',
-            )}
-            style={sel ? { borderColor: b.color, backgroundColor: `${b.color}10` } : {}}
-          >
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-caption"
-              style={{ backgroundColor: b.color }}>
-              {b.id}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-label-md truncate" style={{ color: sel ? b.color : '#1F2937' }}>
-                {b.label}
-              </p>
-              <p className="text-caption text-on-surface-variant truncate">{b.short}</p>
-            </div>
-            {sel && <Icon name="check_circle" className="text-[18px]" style={{ color: b.color }} filled />}
-          </button>
-        )
-      })}
     </div>
   )
 }
@@ -404,22 +213,6 @@ function Field({ label, value, mono, className }) {
       <p className={clsx('font-semibold text-on-surface text-label-md truncate', mono && 'font-mono')}>
         {value || '—'}
       </p>
-    </div>
-  )
-}
-
-function Row({ label, value, fg, bold }) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <span className={clsx('text-caption', bold ? 'font-bold' : 'opacity-85')} style={{ color: fg }}>
-        {label}
-      </span>
-      <span
-        className={clsx(bold ? 'text-headline-md font-bold' : 'text-label-md font-semibold')}
-        style={{ color: fg }}
-      >
-        {value}
-      </span>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { requireCorrelativeId } from '../../common/utils/ids';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateVehicleDto,
@@ -13,7 +14,7 @@ import {
 export class VehiclesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAllForUser(userId: string, role: string) {
+  findAllForUser(userId: number, role: string) {
     if (role === 'admin' || role === 'perito') {
       return this.prisma.vehicle.findMany({
         orderBy: { createdAt: 'desc' },
@@ -25,8 +26,9 @@ export class VehiclesService {
     });
   }
 
-  async findOne(id: string, userId: string, role: string) {
-    const v = await this.prisma.vehicle.findUnique({ where: { id } });
+  async findOne(id: string | number, userId: number, role: string) {
+    const vehicleId = requireCorrelativeId(id, 'Vehículo');
+    const v = await this.prisma.vehicle.findUnique({ where: { id: vehicleId } });
     if (!v) throw new NotFoundException('Vehículo no encontrado');
     if (role !== 'admin' && role !== 'perito' && v.ownerId !== userId) {
       throw new ForbiddenException();
@@ -34,17 +36,17 @@ export class VehiclesService {
     return v;
   }
 
-  create(dto: CreateVehicleDto, ownerId: string) {
+  create(dto: CreateVehicleDto, ownerId: number) {
     return this.prisma.vehicle.create({ data: { ...dto, ownerId } });
   }
 
-  async update(id: string, dto: UpdateVehicleDto, userId: string, role: string) {
-    await this.findOne(id, userId, role);
-    return this.prisma.vehicle.update({ where: { id }, data: dto });
+  async update(id: string | number, dto: UpdateVehicleDto, userId: number, role: string) {
+    const current = await this.findOne(id, userId, role);
+    return this.prisma.vehicle.update({ where: { id: current.id }, data: dto });
   }
 
-  async remove(id: string, userId: string, role: string) {
-    await this.findOne(id, userId, role);
-    return this.prisma.vehicle.delete({ where: { id } });
+  async remove(id: string | number, userId: number, role: string) {
+    const current = await this.findOne(id, userId, role);
+    return this.prisma.vehicle.delete({ where: { id: current.id } });
   }
 }

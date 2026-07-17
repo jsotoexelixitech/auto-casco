@@ -1,5 +1,6 @@
 // Auto Casco — La Mundial de Seguros
 // Prisma schema — PostgreSQL
+// IDs: correlativos Int @default(autoincrement()) — no cuid
 
 generator client {
   provider = "prisma-client-js"
@@ -11,7 +12,7 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           Int      @id @default(autoincrement())
   legacyId     String?  @unique
   email        String   @unique
   passwordHash String
@@ -36,23 +37,23 @@ model User {
 }
 
 model Vehicle {
-  id        String   @id @default(cuid())
-  legacyId  String?  @unique
-  placa     String   @unique
-  marca     String
-  modelo    String
-  version   String?
-  anio      Int
-  color     String?
-  tipo      String?
-  puestos   Int?
-  serial    String?  @unique
-  image     String?
+  id          Int      @id @default(autoincrement())
+  legacyId    String?  @unique
+  placa       String   @unique
+  marca       String
+  modelo      String
+  version     String?
+  anio        Int
+  color       String?
+  tipo        String?
+  puestos     Int?
+  serial      String?  @unique
+  image       String?
   kilometraje Int?
-  ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  ownerId     Int
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   policies    Policy[]
   inspections Inspection[]
@@ -63,7 +64,7 @@ model Vehicle {
 }
 
 model Plan {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   legacyId    String?  @unique
   nombre      String
   descripcion String?
@@ -78,7 +79,7 @@ model Plan {
 }
 
 model Policy {
-  id              String   @id @default(cuid())
+  id              Int      @id @default(autoincrement())
   legacyId        String?  @unique
   numero          String   @unique
   estado          String   @default("Activa")
@@ -89,13 +90,15 @@ model Policy {
   saldoDisponible Float    @default(0)
   prima           Float    @default(0)
   coberturas      String   @default("[]")         // JSON: [{nombre, limite}]
+  urlPoliza       String?                         // PDF Valrep (urlpoliza)
+  cnRecibo        String?                         // Recibo Valrep (cnrecibo)
   fechaInicio     DateTime @default(now())
   fechaFin        DateTime?
-  vehicleId       String
+  vehicleId       Int
   vehicle         Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  holderId        String
+  holderId        Int
   holder          User     @relation(fields: [holderId], references: [id], onDelete: Cascade)
-  planId          String?
+  planId          Int?
   plan            Plan?    @relation(fields: [planId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -109,14 +112,14 @@ model Policy {
 }
 
 model Inspection {
-  id               String   @id @default(cuid())
+  id               Int      @id @default(autoincrement())
   legacyId         String?  @unique
   numero           String   @unique
   tipo             String   @default("inicial")
   estado           String   @default("borrador")
-  vehicleId        String
+  vehicleId        Int
   vehicle          Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  peritoId         String?
+  peritoId         Int?
   perito           User?    @relation("PeritoInspections", fields: [peritoId], references: [id])
   ubicacion        String?
   latitude         Float?
@@ -136,11 +139,11 @@ model Inspection {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   legacyId  String?  @unique
-  policyId  String?
+  policyId  Int?
   policy    Policy?  @relation(fields: [policyId], references: [id], onDelete: SetNull)
-  userId    String?
+  userId    Int?
   concepto  String
   metodo    String   @default("Saldo")
   monto     Float
@@ -154,8 +157,8 @@ model Payment {
 }
 
 model PaymentMethod {
-  id        String   @id @default(cuid())
-  userId    String
+  id        Int      @id @default(autoincrement())
+  userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      String   // card | transfer | pago-movil
   label     String
@@ -169,12 +172,12 @@ model PaymentMethod {
 }
 
 model Siniestro {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   legacyId    String?  @unique
   numero      String   @unique
-  policyId    String
+  policyId    Int
   policy      Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
-  vehicleId   String
+  vehicleId   Int
   vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
   tipo        String   @default("Choque Frontal")
   severidad   String   @default("moderado")

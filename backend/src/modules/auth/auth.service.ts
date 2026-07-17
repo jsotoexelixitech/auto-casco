@@ -68,7 +68,7 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  async me(userId: string): Promise<UserPublicDto> {
+  async me(userId: number): Promise<UserPublicDto> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -88,7 +88,7 @@ export class AuthService {
   }
 
   private async buildAuthResponse(user: {
-    id: string;
+    id: number;
     email: string;
     name: string;
     role: string;
@@ -99,7 +99,7 @@ export class AuthService {
     documento?: string | null;
   }): Promise<AuthResponseDto> {
     const payload: JwtPayload = {
-      sub: user.id,
+      sub: String(user.id),
       email: user.email,
       role: user.role,
     };

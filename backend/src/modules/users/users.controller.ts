@@ -32,7 +32,7 @@ export class UsersController {
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un usuario por id' })
   findOne(@Param('id') id: string, @CurrentUser() current: AuthUser) {
-    if (current.role !== 'admin' && current.id !== id) {
+    if (current.role !== 'admin' && current.id !== Number(id)) {
       throw new ForbiddenException('Solo puedes ver tu propio perfil');
     }
     return this.users.findOne(id);
@@ -45,7 +45,7 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
     @CurrentUser() current: AuthUser,
   ) {
-    if (current.role !== 'admin' && current.id !== id) {
+    if (current.role !== 'admin' && current.id !== Number(id)) {
       throw new ForbiddenException('Solo puedes actualizar tu propio perfil');
     }
     return this.users.update(id, dto);

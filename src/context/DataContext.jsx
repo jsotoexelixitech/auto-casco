@@ -22,6 +22,7 @@ import {
   normalizeMethods,
   normalizeMethod,
 } from '../utils/dataNormalizers'
+import { ensureVehicleForInspection } from '../utils/persistInspection'
 
 const DataContext = createContext(null)
 
@@ -64,13 +65,15 @@ export function DataProvider({ children }) {
     }
 
     try {
-      const [apiPolicies, apiSiniestros, apiPagos, apiMethods, apiPlans] =
+      const [apiPolicies, apiSiniestros, apiPagos, apiMethods, apiPlans, apiVehicles, apiInspections] =
         await Promise.allSettled([
           api.policies.list(),
           api.siniestros.list(),
           api.payments.list(),
           api.payments.methods(),
           api.plans.list(),
+          api.vehicles.list(),
+          api.inspections.list(),
         ])
 
       if (apiPolicies.status === 'fulfilled' && apiPolicies.value?.length)
@@ -88,6 +91,46 @@ export function DataProvider({ children }) {
       if (apiPlans.status === 'fulfilled' && apiPlans.value?.length)
         setPlans(apiPlans.value)
 
+      if (apiVehicles.status === 'fulfilled' && apiVehicles.value?.length) {
+        setVehicles((prev) => {
+          const remote = apiVehicles.value.map((v) => ({ ...v, dbId: v.id }))
+          const remotePlacas = new Set(remote.map((v) => String(v.placa || '').toUpperCase()))
+          const keepLocal = prev.filter((v) => !remotePlacas.has(String(v.placa || '').toUpperCase()))
+          return [...remote, ...keepLocal]
+        })
+      }
+
+      if (apiInspections.status === 'fulfilled' && apiInspections.value?.length) {
+        setInspections((prev) => {
+          const remote = apiInspections.value.map((i) => {
+            let meta = {}
+            try {
+              meta = typeof i.observaciones === 'string' ? JSON.parse(i.observaciones) : {}
+            } catch { /* texto libre */ }
+            const numero = i.numero || i.legacyId || i.id
+            return {
+              ...i,
+              dbId: i.id,
+              id: numero,
+              numero,
+              estado: i.estado,
+              inspectionNumber: numero,
+              policyNumber: meta.policyNumber || null,
+              cnrecibo: meta.cnrecibo || null,
+              urlpoliza: meta.urlpoliza || null,
+              planRecomendado: meta.planRecomendado || null,
+              titular: meta.titular || null,
+              vehiculo: i.vehicle
+                ? { placa: i.vehicle.placa, marca: i.vehicle.marca, modelo: i.vehicle.modelo }
+                : null,
+            }
+          })
+          const remoteNums = new Set(remote.map((i) => i.numero))
+          const keepLocal = prev.filter((i) => !remoteNums.has(i.numero) && !remoteNums.has(i.id))
+          return [...remote, ...keepLocal]
+        })
+      }
+
       setApiReady(true)
     } catch (err) {
       console.warn('[DataContext] API load failed, using mock data', err)
@@ -98,42 +141,66 @@ export function DataProvider({ children }) {
 
   /* ── Helpers ──────────────────────────────────────────────────────── */
   const helpers = useMemo(() => ({
-    getVehicle: (id) => vehicles.find((v) => v.id === id),
-    getPolicy: (id) => policies.find((p) => p.id === id),
-    getInspection: (id) => inspections.find((i) => i.id === id),
+    getVehicle: (id) => vehicles.find((v) => v.id === id || v.dbId === id),
+    getPolicy: (id) =>
+      policies.find((p) => p.id === id || p.numero === id || p.dbId === id || p.legacyId === id),
+    getInspection: (id) =>
+      inspections.find((i) => i.id === id || i.numero === id || i.dbId === id),
     getSiniestro: (id) => siniestros.find((s) => s.id === id),
     getPolicyByVehicle: (vehicleId) => policies.find((p) => p.vehicleId === vehicleId),
 
-    /* Inspections (mock only for now) */
-    addInspection: (inspection) => setInspections((prev) => [inspection, ...prev]),
-    updateInspection: (id, patch) =>
-      setInspections((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i))),
+    /* Inspections — local + API vía upsertInspectionRecord / persistInspection */
+    addInspection: (inspection) => {
+      setInspections((prev) => {
+        const id = inspection.id || inspection.numero
+        const without = prev.filter((i) => i.id !== id && i.numero !== id)
+        return [inspection, ...without]
+      })
+      return inspection
+    },
+    updateInspection: (id, patch) => {
+      setInspections((prev) =>
+        prev.map((i) => (i.id === id || i.numero === id || i.dbId === id ? { ...i, ...patch } : i)),
+      )
+    },
+    setVehicles: (updater) => setVehicles(updater),
 
-    /* Policies */
+    /* Policies — siempre intenta BD (crea vehículo por placa si hace falta) */
     addPolicy: async (policy) => {
-      if (getToken() && apiReady) {
-        try {
-          const v = vehicles.find((x) => x.id === policy.vehicleId || x.placa === policy.placa)
-          if (v) {
-            const created = await api.policies.create({
-              vehicleId: v.id,
-              planNombre: policy.plan ?? 'Estándar',
-              modalidad: 'dias',
-              diasContratados: policy.diasContratados ?? 30,
-              prima: policy.prima ?? 0,
-              coberturas: policy.coberturas ?? [],
-            })
-            const normalized = normalizePolicies([created])[0]
-            setPolicies((prev) => [normalized, ...prev])
-            return normalized
-          }
-        } catch (err) {
-          console.warn('[DataContext] addPolicy API failed', err)
-        }
+      if (!getToken()) {
+        setPolicies((prev) => [policy, ...prev.filter((p) => p.id !== policy.id && p.numero !== policy.numero)])
+        return { ...policy, persisted: false, error: 'Sin sesión' }
       }
-      // Fallback: add locally
-      setPolicies((prev) => [policy, ...prev])
-      return policy
+      try {
+        const vehicleId = await ensureVehicleForInspection(
+          { placa: policy.placa, ...(policy.vehiculo || {}) },
+          { vehicles, setVehicles },
+        )
+        const created = await api.policies.create({
+          vehicleId,
+          numero: policy.numero || policy.id,
+          planNombre: policy.plan ?? 'Estándar',
+          modalidad: 'dias',
+          diasContratados: policy.diasContratados ?? 365,
+          prima: policy.prima ?? 0,
+          coberturas: policy.coberturas ?? [],
+          urlPoliza: policy.urlpoliza || policy.urlPoliza || undefined,
+          cnRecibo: policy.cnrecibo || policy.cnRecibo || undefined,
+        })
+        const normalized = {
+          ...normalizePolicies([created])[0],
+          persisted: true,
+          urlpoliza: created.urlPoliza || created.urlpoliza || policy.urlpoliza,
+          cnrecibo: created.cnRecibo || created.cnrecibo || policy.cnrecibo,
+        }
+        setPolicies((prev) => [normalized, ...prev.filter((p) => p.numero !== normalized.numero)])
+        return normalized
+      } catch (err) {
+        console.warn('[DataContext] addPolicy API failed', err)
+        const local = { ...policy, persisted: false, error: err?.message }
+        setPolicies((prev) => [local, ...prev.filter((p) => p.id !== policy.id && p.numero !== policy.numero)])
+        return local
+      }
     },
 
     buyDays: async (policyId, days, total = 0) => {

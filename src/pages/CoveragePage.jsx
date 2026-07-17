@@ -7,7 +7,7 @@ import { PLAN_TONES, BRAND } from '../theme/tokens'
 
 const C = { navy: BRAND.navy, deep: BRAND.deep }
 
-const PLANES_LIST = [PLANES.COBERTURA_AMPLIA, PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE, PLANES.PERDIDA_TOTAL]
+const PLANES_LIST = [PLANES.COBERTURA_AMPLIA, PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE, PLANES.PERDIDA_TOTAL, PLANES.RCV]
 
 // Rules derived from planEngine CONFIG_DEFAULTS so they stay in sync
 const { minBuenasAmplia, minBuenasConDeducible, minBuenasPerdidaTotal } = CONFIG_DEFAULTS

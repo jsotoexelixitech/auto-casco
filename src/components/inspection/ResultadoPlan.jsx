@@ -1,21 +1,390 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import clsx from 'clsx'
-import PageHeader from '../ui/PageHeader'
 import Icon from '../ui/Icon'
-import { PLAN_TONES, PIEZA_TONES } from '../../theme/tokens'
+import { PLAN_TONES, BRAND, getAnalisisGradientTone } from '../../theme/tokens'
 import { getActiveSequences } from '../../utils/sequencesConfig'
+import {
+  generateIaDiagnosticoAsync,
+  getIaDiagnosticoSourceKey,
+} from '../../utils/generateIaDiagnostico'
+import { fetchPlanesV2, fetchCotizacion, fetchFrecuencias } from '../../services/valrepApi'
+import { mapValrepPlanesToUi, selectTopPlanesFromIa } from '../../utils/mapValrepPlanes'
+import { resolveInmaVehicle, primaFromMprimaext } from '../../utils/resolveInmaVehicle'
+import {
+  pickDefaultFrecuencia,
+  cuotaFromPrimaAnual,
+  isFrecuenciaAnual,
+} from '../../utils/primaFrecuencia'
 
-const ESTADO_STYLE = {
-  B:  { label: 'Buena',     ...PIEZA_TONES.B,  icon: 'check_circle'  },
-  R:  { label: 'Regular',   ...PIEZA_TONES.R,  icon: 'warning'       },
-  M:  { label: 'Mala',      ...PIEZA_TONES.M,  icon: 'cancel'        },
-  NE: { label: 'No existe', ...PIEZA_TONES.NE, icon: 'remove_circle' },
+/** Estilo general del card de planes / detalle (navy). */
+const SELECT_TONE = {
+  bg: '#EEF0FA',
+  fg: BRAND.navy,
+  border: BRAND.navy,
 }
 
-export default function ResultadoPlan({ resultado, inspectionNumber, navigate, photos, onContratar }) {
-  const { plan, planesDisponibles, elegible, piezas, motivo } = resultado
-  const [planSel, setPlanSel] = useState(plan)
-  const [expandedZone, setExpandedZone] = useState(null)
+/** Solo el ítem seleccionado de la lista usa `secondary`. */
+const SELECTED_ITEM_TONE = {
+  bg: '#ffdedf', // secondary-fixed
+  fg: '#b23f44', // secondary
+  border: '#b23f44',
+}
+
+export default function ResultadoPlan({
+  resultado,
+  inspectionNumber,
+  navigate,
+  photos,
+  onPlanChange,
+  embedded = false,
+  iaDiagnostico = '',
+  setIaDiagnostico,
+  iaDiagnosticoKey = '',
+  setIaDiagnosticoKey,
+  vehiculo,
+  danios = [],
+  valrepPlanes = [],
+  setValrepPlanes,
+  valrepPlanesKey = '',
+  setValrepPlanesKey,
+  valrepPlanesStatus = 'idle',
+  setValrepPlanesStatus,
+  valrepPlanesError = '',
+  setValrepPlanesError,
+}) {
+  const {
+    plan: iaPlan,
+    planesDisponibles: planesLocales,
+    elegible,
+    piezas,
+    motivo,
+  } = resultado
+
+  const sourceKey = useMemo(
+    () => getIaDiagnosticoSourceKey({ danios, photos, vehiculo }),
+    [danios, photos, vehiculo],
+  )
+  const diagnosisIsCurrent = Boolean(iaDiagnostico && iaDiagnosticoKey === sourceKey)
+  const planesAreCurrent = Boolean(
+    valrepPlanesKey === sourceKey
+    && (valrepPlanesStatus === 'ready' || valrepPlanesStatus === 'error'),
+  )
+
+  useEffect(() => {
+    if (!setIaDiagnostico) return undefined
+    if (diagnosisIsCurrent) return undefined
+
+    let cancelled = false
+
+    generateIaDiagnosticoAsync({
+      danios,
+      photos,
+      vehiculo,
+    })
+      .then((diag) => {
+        if (cancelled) return
+        setIaDiagnostico(diag)
+        setIaDiagnosticoKey?.(sourceKey)
+      })
+
+    return () => { cancelled = true }
+  }, [
+    danios,
+    photos,
+    vehiculo,
+    sourceKey,
+    diagnosisIsCurrent,
+    setIaDiagnostico,
+    setIaDiagnosticoKey,
+  ])
+
+  // Catálogo Valrep: misma huella que el diagnóstico (cambia si cambian fotos del paso 3)
+  useEffect(() => {
+    if (!setValrepPlanes || !setValrepPlanesStatus) return undefined
+    if (planesAreCurrent) return undefined
+
+    let cancelled = false
+    setValrepPlanesStatus('loading')
+    setValrepPlanesError?.('')
+
+    fetchPlanesV2()
+      .then((raw) => {
+        if (cancelled) return
+        const mapped = mapValrepPlanesToUi(raw)
+        setValrepPlanes(mapped)
+        setValrepPlanesKey?.(sourceKey)
+        setValrepPlanesStatus('ready')
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setValrepPlanes([])
+        setValrepPlanesKey?.(sourceKey)
+        setValrepPlanesStatus('error')
+        setValrepPlanesError?.(err?.message || 'Error al cargar planes')
+      })
+
+    return () => { cancelled = true }
+  }, [
+    sourceKey,
+    planesAreCurrent,
+    setValrepPlanes,
+    setValrepPlanesKey,
+    setValrepPlanesStatus,
+    setValrepPlanesError,
+  ])
+
+  const usingValrep = valrepPlanesStatus === 'ready' && valrepPlanes.length > 0
+  const rankedValrep = useMemo(
+    () => (usingValrep
+      ? selectTopPlanesFromIa(valrepPlanes, iaPlan, { limit: 4, piezas })
+      : null),
+    [usingValrep, valrepPlanes, iaPlan, piezas],
+  )
+  const planesDisponibles = rankedValrep?.planes?.length
+    ? rankedValrep.planes
+    : (planesLocales || []).slice(0, 4)
+  const planSugerido = rankedValrep?.sugerido ?? iaPlan
+
+  const userPickedRef = useRef(false)
+  const [planSel, setPlanSel] = useState(planSugerido ?? iaPlan)
+  /** @type {Record<string, { status: string, prima?: object, error?: string, matched?: object }>} */
+  const [cotizacionByPlan, setCotizacionByPlan] = useState({})
+  /** @type {Record<string, { status: string, list?: Array<{cvalor:string,xdescripcion:string}>, error?: string }>} */
+  const [frecuenciasByPlan, setFrecuenciasByPlan] = useState({})
+  const [frecuenciaSel, setFrecuenciaSel] = useState(null)
+
+  useEffect(() => {
+    userPickedRef.current = false
+    setCotizacionByPlan({})
+    setFrecuenciasByPlan({})
+    setFrecuenciaSel(null)
+  }, [sourceKey])
+
+  useEffect(() => {
+    if (!planSugerido) return
+    if (!userPickedRef.current) setPlanSel(planSugerido)
+  }, [planSugerido])
+
+  // Al cambiar de plan, volver a Anual (la prima API es anual)
+  useEffect(() => {
+    setFrecuenciaSel(null)
+  }, [planSel?.id])
+
+  // Si Anual está disponible y no hay selección, marcarla (también con frecuencias en caché)
+  useEffect(() => {
+    if (frecuenciaSel) return
+    const list = (frecuenciasByPlan[planSel?.id]?.list || []).filter((f) => isFrecuenciaAnual(f))
+    if (!list?.length) return
+    setFrecuenciaSel(pickDefaultFrecuencia(list)?.cvalor ?? list[0].cvalor)
+  }, [planSel?.id, frecuenciasByPlan, frecuenciaSel])
+
+  // Cotización + frecuencias Valrep al seleccionar un plan
+  useEffect(() => {
+    if (!planSel?.id || planSel.source !== 'valrep') return undefined
+    if (!vehiculo?.marca?.trim() || !vehiculo?.anio) return undefined
+
+    const planId = planSel.id
+    const cotReady = cotizacionByPlan[planId]?.status === 'ready'
+    const freqReady = frecuenciasByPlan[planId]?.status === 'ready'
+    if (cotReady && freqReady) return undefined
+
+    let cancelled = false
+
+    if (!cotReady) {
+      setCotizacionByPlan((prev) => ({
+        ...prev,
+        [planId]: { ...prev[planId], status: 'loading', error: undefined },
+      }))
+    }
+    if (!freqReady) {
+      setFrecuenciasByPlan((prev) => ({
+        ...prev,
+        [planId]: { ...prev[planId], status: 'loading', error: undefined },
+      }))
+    }
+
+    ;(async () => {
+      const freqPromise = freqReady
+        ? Promise.resolve(
+            (frecuenciasByPlan[planId]?.list || []).filter((f) => isFrecuenciaAnual(f)),
+          )
+        : fetchFrecuencias(planId)
+            .then((list) => {
+              if (cancelled) return []
+              // Solo frecuencia anual (omitir semestral, trimestral, etc.)
+              const anualOnly = (Array.isArray(list) ? list : []).filter((f) => isFrecuenciaAnual(f))
+              setFrecuenciasByPlan((prev) => ({
+                ...prev,
+                [planId]: { status: 'ready', list: anualOnly },
+              }))
+              return anualOnly
+            })
+            .catch((err) => {
+              if (cancelled) return []
+              setFrecuenciasByPlan((prev) => ({
+                ...prev,
+                [planId]: {
+                  status: 'error',
+                  list: [],
+                  error: err?.message || 'No se pudieron cargar las frecuencias',
+                },
+              }))
+              return []
+            })
+
+      const cotPromise = cotReady
+        ? Promise.resolve(null)
+        : (async () => {
+            try {
+              const codes = await resolveInmaVehicle(vehiculo)
+              const data = await fetchCotizacion({
+                cmarca: codes.cmarca,
+                cmodelo: codes.cmodelo,
+                cversion: codes.cversion,
+                fano: codes.fano,
+                cplan: planId,
+                ccategoria_uso: codes.ccategoria_uso,
+              })
+              if (cancelled) return null
+              const prima = primaFromMprimaext(data?.mprimaext, {
+                mprima: data?.mprima,
+                ptasa: data?.ptasa,
+                mprimaext: data?.mprimaext,
+              })
+              setCotizacionByPlan((prev) => ({
+                ...prev,
+                [planId]: {
+                  status: 'ready',
+                  prima,
+                  matched: codes.matched,
+                  codes: {
+                    cmarca: codes.cmarca,
+                    cmodelo: codes.cmodelo,
+                    cversion: codes.cversion,
+                    ccategoria_uso: codes.ccategoria_uso,
+                    fano: codes.fano,
+                    matched: codes.matched,
+                  },
+                  raw: data,
+                },
+              }))
+              return null
+            } catch (err) {
+              if (cancelled) return null
+              setCotizacionByPlan((prev) => ({
+                ...prev,
+                [planId]: {
+                  status: 'error',
+                  error: err?.message || 'No se pudo cotizar el plan',
+                },
+              }))
+              return null
+            }
+          })()
+
+      const [freqs] = await Promise.all([freqPromise, cotPromise])
+      if (cancelled) return
+
+      // Prima API = anual → marcar Anual por defecto
+      if (freqs?.length) {
+        setFrecuenciaSel((prev) => {
+          if (prev && freqs.some((f) => f.cvalor === prev)) return prev
+          return pickDefaultFrecuencia(freqs)?.cvalor ?? freqs[0].cvalor
+        })
+      }
+    })()
+
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    planSel?.id,
+    planSel?.source,
+    vehiculo?.marca,
+    vehiculo?.modelo,
+    vehiculo?.version,
+    vehiculo?.anio,
+    vehiculo?.tipo,
+  ])
+
+  useEffect(() => {
+    if (!planSel) return
+    const cot = cotizacionByPlan[planSel.id]
+    const freq = frecuenciasByPlan[planSel.id]
+    const frecuencias = (freq?.list || []).filter((f) => isFrecuenciaAnual(f))
+    const frecuencia = frecuencias.find((f) => f.cvalor === frecuenciaSel) || null
+    const primaAnual = Number(cot?.prima?.anual ?? cot?.prima?.monto ?? planSel.prima?.anual ?? planSel.prima?.monto)
+    const cuota = frecuencia
+      ? cuotaFromPrimaAnual(primaAnual, frecuencia)
+      : (Number.isFinite(primaAnual) ? primaAnual : undefined)
+
+    const cplanApi = String(planSel.raw?.cplan ?? planSel.cplan ?? '').trim()
+    const base = {
+      ...planSel,
+      id: cplanApi || planSel.id,
+      cplan: cplanApi,
+      source: planSel.source || 'valrep',
+      frecuencias,
+      frecuencia,
+      frecuenciaCodigo: frecuencia?.cvalor ?? frecuenciaSel,
+    }
+
+    if (cot?.status === 'ready' && cot.prima) {
+      onPlanChange?.({
+        ...base,
+        prima: {
+          ...cot.prima,
+          monto: cuota ?? cot.prima.monto,
+          cuota,
+          anual: cot.prima.anual ?? cot.prima.monto,
+        },
+        inmaMatched: cot.matched,
+        inmaCodes: cot.codes || null,
+        cotizacion: cot.raw,
+      })
+      return
+    }
+    onPlanChange?.(base)
+  }, [planSel, cotizacionByPlan, frecuenciasByPlan, frecuenciaSel, onPlanChange])
+
+  // Efecto máquina de escribir solo tras una generación nueva (no al reusar caché)
+  const awaitGenerationRef = useRef(!diagnosisIsCurrent)
+  const [typedText, setTypedText] = useState(diagnosisIsCurrent ? iaDiagnostico : '')
+  const [isTyping, setIsTyping] = useState(false)
+
+  useEffect(() => {
+    if (!diagnosisIsCurrent) {
+      awaitGenerationRef.current = true
+      setTypedText('')
+      setIsTyping(false)
+      return undefined
+    }
+
+    const shouldType = awaitGenerationRef.current
+    awaitGenerationRef.current = false
+
+    if (!shouldType) {
+      setTypedText(iaDiagnostico)
+      setIsTyping(false)
+      return undefined
+    }
+
+    setIsTyping(true)
+    setTypedText('')
+    let index = 0
+    const charsPerTick = 2
+    const tickMs = 16
+
+    const id = window.setInterval(() => {
+      index = Math.min(iaDiagnostico.length, index + charsPerTick)
+      setTypedText(iaDiagnostico.slice(0, index))
+      if (index >= iaDiagnostico.length) {
+        window.clearInterval(id)
+        setIsTyping(false)
+      }
+    }, tickMs)
+
+    return () => window.clearInterval(id)
+  }, [diagnosisIsCurrent, iaDiagnostico])
 
   const activeSequences = getActiveSequences()
 
@@ -33,192 +402,208 @@ export default function ResultadoPlan({ resultado, inspectionNumber, navigate, p
       return { seq: s, ph, piezasResult, counts }
     })
 
-  const totalPiezasAnalizadas = zonasAnalizadas.reduce((acc, z) => acc + z.piezasResult.length, 0)
+  // % y barras: solo piezas que el vehículo sí tiene (excluye NE / no aplica)
+  const piezasPresentes = (piezas.buenas || 0) + (piezas.regulares || 0) + (piezas.malas || 0)
+  const denomPct = piezasPresentes || 1
+  const pctBuenas = Math.round((piezas.buenas / denomPct) * 100)
+  const pctRegulares = Math.round((piezas.regulares / denomPct) * 100)
+  const pctMalas = Math.round((piezas.malas / denomPct) * 100)
+  const analisisTone = getAnalisisGradientTone(pctBuenas, { elegible })
+  const analisisIcon = analisisTone.icon
+
+  const planesLoading = valrepPlanesStatus === 'loading' || (!planesAreCurrent && Boolean(setValrepPlanes))
+  const showPlanes = elegible && !planesLoading && planSel
+  const showPlanesFallbackNote = valrepPlanesStatus === 'error' && planesLocales?.length > 0
 
   return (
-    <div className="flex flex-col gap-5 pb-8">
-      <PageHeader
-        breadcrumbs={[
-          { label: 'Inicio', to: '/dashboard' },
-          { label: 'Inspecciones', to: '/inspecciones' },
-          { label: inspectionNumber },
-        ]}
-        eyebrow={inspectionNumber}
-        title="Resultado de Inspección IA"
-        subtitle={`Análisis Gemini Vision · ${zonasAnalizadas.length} zonas · ${totalPiezasAnalizadas} piezas evaluadas`}
-        actions={
-          <button onClick={() => navigate('/inspecciones')} className="btn-soft">
-            <Icon name="list" /> Inspecciones
-          </button>
-        }
-      />
+    <div className={clsx('flex flex-col gap-5', embedded ? 'pb-2' : 'pb-8')}>
+      {/* ── Resumen + Diagnóstico IA (mitad / mitad) ───────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div className="card p-4 sm:p-5 flex flex-col" style={{ borderTop: '3px solid #0F1A5A' }}>
+          <h3 className="text-headline-md text-on-surface mb-1 flex items-center gap-2">
+            <Icon name="auto_awesome" className="text-primary text-[22px]" filled />
+            Resumen del análisis
+          </h3>
+          <p className="text-caption text-on-surface-variant mb-3">
+            {zonasAnalizadas.length} zona(s) analizadas · {piezasPresentes} pieza(s) evaluadas
+            {piezas.noExiste > 0 ? ` · ${piezas.noExiste} omitidas (no aplican)` : ''}
+          </p>
 
-      {/* ── Resumen global ─────────────────────────────────────────────── */}
-      <div className="card p-4 sm:p-5" style={{ borderTop: '3px solid #0F1A5A' }}>
-        <h3 className="text-headline-md text-on-surface mb-1 flex items-center gap-2">
-          <Icon name="auto_awesome" className="text-primary text-[22px]" filled />
-          Resumen del análisis
-        </h3>
-        <p className="text-caption text-on-surface-variant mb-4">
-          {zonasAnalizadas.length} zona(s) analizadas · {totalPiezasAnalizadas} piezas en total
-          {' — cada foto puede cubrir múltiples piezas del mismo sector del vehículo.'}
-        </p>
-
-        <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
-          <PiezaStat label="Buenas"    value={piezas.buenas}    tone="success" icon="check_circle" />
-          <PiezaStat label="Regulares" value={piezas.regulares} tone="warning" icon="warning" />
-          <PiezaStat label="Malas"     value={piezas.malas}     tone="error"   icon="cancel" />
-          <PiezaStat label="Total eval." value={totalPiezasAnalizadas} tone="neutral" icon="analytics" />
-        </div>
-
-        {totalPiezasAnalizadas > 0 && (
-          <div className="flex h-3 rounded-full overflow-hidden mb-2 gap-0.5">
-            {piezas.buenas > 0 && (
-              <div className="bg-green-500 transition-all rounded-l-full"
-                style={{ width: `${(piezas.buenas / totalPiezasAnalizadas) * 100}%` }} />
-            )}
-            {piezas.regulares > 0 && (
-              <div className="bg-amber-400 transition-all"
-                style={{ width: `${(piezas.regulares / totalPiezasAnalizadas) * 100}%` }} />
-            )}
-            {piezas.malas > 0 && (
-              <div className="bg-red-500 transition-all rounded-r-full"
-                style={{ width: `${(piezas.malas / totalPiezasAnalizadas) * 100}%` }} />
-            )}
+          <div className="grid grid-cols-4 gap-1.5 mb-3">
+            <PiezaStat label="Buenas"    value={piezas.buenas}    tone="success" icon="check_circle" />
+            <PiezaStat label="Regulares" value={piezas.regulares} tone="warning" icon="warning" />
+            <PiezaStat label="Malas"     value={piezas.malas}     tone="error"   icon="cancel" />
+            <PiezaStat label="Total"     value={piezasPresentes} tone="neutral" icon="analytics" />
           </div>
-        )}
-        <div className="flex gap-4 text-caption text-on-surface-variant">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> {Math.round((piezas.buenas / (totalPiezasAnalizadas || 1)) * 100)}% buenas</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> {Math.round((piezas.regulares / (totalPiezasAnalizadas || 1)) * 100)}% regulares</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> {Math.round((piezas.malas / (totalPiezasAnalizadas || 1)) * 100)}% malas</span>
+
+          {piezasPresentes > 0 && (
+            <div className="flex h-3 rounded-full overflow-hidden mb-2 gap-0.5">
+              {piezas.buenas > 0 && (
+                <div className="bg-green-500 transition-all rounded-l-full"
+                  style={{ width: `${(piezas.buenas / denomPct) * 100}%` }} />
+              )}
+              {piezas.regulares > 0 && (
+                <div className="bg-amber-400 transition-all"
+                  style={{ width: `${(piezas.regulares / denomPct) * 100}%` }} />
+              )}
+              {piezas.malas > 0 && (
+                <div className="bg-red-500 transition-all rounded-r-full"
+                  style={{ width: `${(piezas.malas / denomPct) * 100}%` }} />
+              )}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-on-surface-variant mb-2">
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> {pctBuenas}% buenas</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> {pctRegulares}% regulares</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> {pctMalas}% malas</span>
+          </div>
+
+          <div
+            className="mt-auto p-3 rounded-xl border"
+            style={{
+              backgroundColor: analisisTone.bg,
+              borderColor:     analisisTone.border,
+              color:           analisisTone.fg,
+            }}
+          >
+            <div className="flex items-start gap-2">
+              <Icon name={analisisIcon} className="text-[18px] mt-0.5 shrink-0" filled />
+              <p className="font-semibold leading-snug text-caption">{motivo}</p>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-4 p-3 rounded-xl border"
+        <div
+          className="card p-4 sm:p-5 flex flex-col border"
           style={{
-            backgroundColor: elegible ? '#EEF9F1' : '#FFF0F0',
-            borderColor:     elegible ? '#86EFAC' : '#FCA5A5',
-            color:           elegible ? '#166534' : '#991B1B',
-          }}>
-          <div className="flex items-start gap-2">
-            <Icon name={elegible ? 'task_alt' : 'gpp_bad'} className="text-[20px] mt-0.5 shrink-0" filled />
-            <p className="font-semibold leading-snug text-body-md">{motivo}</p>
+            backgroundColor: analisisTone.bg,
+            borderColor: analisisTone.border,
+            borderTop: `3px solid ${analisisTone.fg}`,
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Icon name="auto_awesome" style={{ color: analisisTone.fg }} filled />
+            <h3 className="text-headline-md" style={{ color: analisisTone.fg }}>Diagnóstico IA</h3>
           </div>
+          {diagnosisIsCurrent ? (
+            <p
+              className="text-body-md leading-relaxed rounded-xl p-4 flex-1 whitespace-pre-wrap border bg-white/70"
+              style={{ borderColor: analisisTone.border, color: analisisTone.fg }}
+            >
+              {typedText}
+              {isTyping && (
+                <span
+                  className="inline-block w-[2px] h-[1.1em] ml-0.5 align-[-0.15em] animate-pulse"
+                  style={{ backgroundColor: analisisTone.fg }}
+                  aria-hidden
+                />
+              )}
+            </p>
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center gap-4 p-6 sm:p-8 rounded-xl border flex-1 min-h-[10rem] bg-white/55"
+              style={{ borderColor: analisisTone.border }}
+            >
+              <Icon
+                name="progress_activity"
+                className="animate-spin text-[40px] sm:text-[44px] shrink-0"
+                style={{ color: analisisTone.fg }}
+              />
+              <p
+                className="text-body-md text-center leading-snug max-w-sm italic"
+                style={{ color: analisisTone.fg }}
+              >
+                Ejecutando análisis IA en base a la información cargada...
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Detalle por zona ───────────────────────────────────────────── */}
-      {zonasAnalizadas.length > 0 && (
-        <div className="card p-4 sm:p-5" style={{ borderTop: '3px solid #0F1A5A' }}>
-          <h3 className="text-headline-md text-on-surface mb-1 flex items-center gap-2">
-            <Icon name="photo_library" className="text-primary text-[22px]" filled />
-            Detalle por zona fotográfica
-          </h3>
-          <p className="text-caption text-on-surface-variant mb-4">
-            Toca cualquier zona para ver el estado de cada pieza individualmente.
+      {/* ── Carga de planes Valrep ─────────────────────────────────────── */}
+      {elegible && planesLoading && (
+        <div className="card p-6 flex flex-col items-center justify-center gap-3 min-h-[12rem]">
+          <Icon name="progress_activity" className="animate-spin text-[40px] text-primary" />
+          <p className="text-body-md text-on-surface-variant text-center">
+            Consultando planes disponibles…
           </p>
-          <div className="flex flex-col gap-2">
-            {zonasAnalizadas.map(({ seq, ph, piezasResult, counts }) => {
-              const expanded = expandedZone === seq.id
-              const hasDamage = counts.R > 0 || counts.M > 0
-              return (
-                <div key={seq.id} className="rounded-xl border border-outline-variant/50 overflow-hidden">
-                  <button
-                    className="w-full flex items-center gap-3 p-3 text-left hover:bg-surface-container-low transition-colors"
-                    onClick={() => setExpandedZone(expanded ? null : seq.id)}
-                  >
-                    {ph.thumbnail && (
-                      <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-surface-container">
-                        <img src={ph.thumbnail} alt="" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-on-surface text-label-md">{seq.nombre}</p>
-                        {hasDamage && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                            ⚠ Daños detectados
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-3 mt-1">
-                        <span className="text-[11px] text-green-700 font-semibold">{counts.B} buenas</span>
-                        {counts.R > 0 && <span className="text-[11px] text-amber-700 font-semibold">{counts.R} regulares</span>}
-                        {counts.M > 0 && <span className="text-[11px] text-red-700 font-semibold">{counts.M} malas</span>}
-                        {counts.NE > 0 && <span className="text-[11px] text-slate-500 font-semibold">{counts.NE} no existen</span>}
-                        <span className="text-[11px] text-on-surface-variant">· {piezasResult.length} piezas</span>
-                      </div>
-                    </div>
-                    <Icon name={expanded ? 'expand_less' : 'expand_more'} className="text-[22px] text-on-surface-variant shrink-0" />
-                  </button>
-
-                  {expanded && (
-                    <div className="border-t border-outline-variant/30 px-3 pb-3 pt-2 bg-surface-container-low/30">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                        {piezasResult.map((pieza) => {
-                          const s = ESTADO_STYLE[pieza.estado] ?? ESTADO_STYLE.B
-                          return (
-                            <div key={pieza.nombre} className="flex items-start gap-2 p-2 rounded-lg"
-                              style={{ backgroundColor: s.bg }}>
-                              <Icon name={s.icon} className="text-[16px] shrink-0 mt-0.5" style={{ color: s.fg }} filled />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-[12px] font-bold text-on-surface">{pieza.nombre}</span>
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white"
-                                    style={{ backgroundColor: s.fg }}>
-                                    {s.label}
-                                  </span>
-                                  {pieza.confianza !== undefined && (
-                                    <span className="text-[10px] text-on-surface-variant">
-                                      {Math.round(pieza.confianza * 100)}% confianza
-                                    </span>
-                                  )}
-                                </div>
-                                {pieza.comentario && (
-                                  <p className="text-[11px] mt-0.5" style={{ color: s.fg }}>{pieza.comentario}</p>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
         </div>
       )}
 
-      {/* ── Plan recomendado ───────────────────────────────────────────── */}
-      {elegible && planSel ? (
-        <div className="flex flex-col gap-3">
+      {showPlanesFallbackNote && (
+        <div className="rounded-xl px-4 py-3 bg-amber-50 border border-amber-200 text-caption text-amber-900">
+          No se pudieron cargar los planes Valrep{valrepPlanesError ? `: ${valrepPlanesError}` : ''}.
+          Se muestran opciones locales provisionalmente.
+        </div>
+      )}
+
+      {/* ── Plan: selector (izq) + detalle (der) ───────────────────────── */}
+      {showPlanes ? (
+        <div
+          className={clsx(
+            'grid gap-3 items-stretch',
+            planesDisponibles.length > 1 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1',
+          )}
+        >
           {planesDisponibles.length > 1 && (
-            <div className="card p-4">
-              <p className="text-label-md text-on-surface-variant mb-3 uppercase tracking-wide text-[11px] font-bold">
+            <div className="card p-3 sm:p-4 flex flex-col" style={{ borderTop: `3px solid ${SELECT_TONE.fg}` }}>
+              <p className="text-label-md text-on-surface-variant mb-2.5 uppercase tracking-wide text-[11px] font-bold">
                 Planes disponibles para tu vehículo
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="flex flex-col gap-1.5 flex-1 max-h-[28rem] overflow-y-auto pr-0.5">
                 {planesDisponibles.map((p) => {
-                  const t = PLAN_TONES[p.color] ?? PLAN_TONES.success
                   const sel = planSel.id === p.id
+                  const sugerido = planSugerido?.id === p.id
                   return (
-                    <button key={p.id} onClick={() => setPlanSel(p)}
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        userPickedRef.current = true
+                        setPlanSel(p)
+                      }}
                       className={clsx(
-                        'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
-                        sel ? 'ring-2 ring-offset-1' : 'hover:border-outline-variant',
+                        'flex items-center gap-2.5 p-2.5 rounded-xl border-2 text-left transition-all',
+                        sel ? 'ring-2 ring-offset-1 ring-secondary/30' : 'hover:border-outline-variant',
                       )}
-                      style={sel ? { backgroundColor: t.bg, borderColor: t.fg } : { borderColor: '#E0E0E0' }}
+                      style={
+                        sel
+                          ? { backgroundColor: SELECTED_ITEM_TONE.bg, borderColor: SELECTED_ITEM_TONE.border }
+                          : { borderColor: '#E0E0E0', backgroundColor: '#FFFFFF' }
+                      }
                     >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: t.bg, color: t.fg }}>
-                        <Icon name={p.icono} className="text-[22px]" filled />
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                        style={{
+                          backgroundColor: sel ? '#FFFFFF' : SELECT_TONE.bg,
+                          color: sel ? SELECTED_ITEM_TONE.fg : SELECT_TONE.fg,
+                        }}
+                      >
+                        <Icon name={p.icono} className="text-[20px]" filled />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-on-surface">{p.nombre}</p>
-                        <p className="text-caption text-on-surface-variant truncate">{p.subtitulo}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-bold text-on-surface text-sm leading-tight">{p.nombre}</p>
+                          {sugerido && (
+                            <span
+                              className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-px rounded-full text-white"
+                              style={{ backgroundColor: SELECT_TONE.fg }}
+                            >
+                              Sugerido
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-on-surface-variant truncate leading-snug">
+                          {p.subtitulo}
+                        </p>
                       </div>
-                      {sel && <Icon name="check_circle" className="text-[22px] shrink-0" style={{ color: t.fg }} filled />}
+                      {sel && (
+                        <Icon
+                          name="check_circle"
+                          className="text-[18px] shrink-0 text-secondary"
+                          filled
+                        />
+                      )}
                     </button>
                   )
                 })}
@@ -227,74 +612,136 @@ export default function ResultadoPlan({ resultado, inspectionNumber, navigate, p
           )}
 
           {(() => {
-            const t = PLAN_TONES[planSel.color] ?? PLAN_TONES.success
+            const cot = cotizacionByPlan[planSel.id]
+            const prima = cot?.prima || planSel.prima || {}
+            const cotizando = cot?.status === 'loading'
+            const cotError = cot?.status === 'error'
+            const freqs = (frecuenciasByPlan[planSel.id]?.list || []).filter((f) => isFrecuenciaAnual(f))
+            const frecuencia =
+              freqs.find((f) => f.cvalor === frecuenciaSel) || pickDefaultFrecuencia(freqs)
+            const primaAnual = Number(prima.anual ?? prima.monto)
+            const monto = frecuencia
+              ? cuotaFromPrimaAnual(primaAnual, frecuencia)
+              : primaAnual
+            const montoLabel = cotizando
+              ? '…'
+              : Number.isFinite(monto)
+                ? `$${Number(monto).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '—'
+            const primaCaption = frecuencia
+              ? (isFrecuenciaAnual(frecuencia)
+                ? 'Prima anual'
+                : `Cuota ${String(frecuencia.xdescripcion || '').toLowerCase()}`)
+              : 'Prima'
+
             return (
-              <div className="rounded-2xl p-5 sm:p-6 border-2"
-                style={{ backgroundColor: t.bg, borderColor: t.border }}>
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-elev-1"
-                    style={{ backgroundColor: 'white', color: t.fg }}>
-                    <Icon name={planSel.icono} className="text-[34px]" filled />
+              <div
+                className="rounded-2xl p-4 sm:p-5 relative overflow-hidden text-white flex flex-col h-full gap-3"
+                style={{ backgroundColor: '#0F1A5A', borderLeft: '4px solid #ACACAC' }}
+              >
+                <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(255,255,255,0.04)' }} />
+                <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full blur-2xl pointer-events-none" style={{ background: 'rgba(255,255,255,0.03)' }} />
+
+                <div className="relative flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                    <Icon name={planSel.icono} className="text-white text-[20px]" filled />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h2 className="text-display-sm font-bold" style={{ color: t.fg }}>{planSel.nombre}</h2>
-                      <span className="text-caption font-bold px-2.5 py-1 rounded-full text-white"
-                        style={{ backgroundColor: t.fg }}>
-                        {planSel.badge}
-                      </span>
-                    </div>
-                    <p className="text-label-md font-semibold" style={{ color: t.fg }}>{planSel.subtitulo}</p>
+                    <p className="text-sm uppercase tracking-widest opacity-70 mb-0.5">
+                      Plan seleccionado
+                    </p>
+                    <h2 className="text-label-md sm:text-headline-md font-bold leading-tight">
+                      {planSel.nombre}
+                    </h2>
+                    <p className="text-sm text-white/70 mt-0.5 leading-snug">
+                      {planSel.subtitulo}
+                    </p>
                   </div>
                 </div>
 
-                <p className="text-body-md mb-4 leading-relaxed" style={{ color: t.fg }}>{planSel.descripcion}</p>
-
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  {[
-                    { label: 'Prima diaria',  value: `$${planSel.prima.diaria.toFixed(2)}` },
-                    { label: 'Prima mensual', value: `$${planSel.prima.mensual}` },
-                    { label: 'Prima anual',   value: `$${planSel.prima.anual}` },
-                  ].map((p) => (
-                    <div key={p.label} className="bg-white/60 rounded-xl p-3 text-center">
-                      <p className="text-[11px] text-on-surface-variant uppercase tracking-wide mb-0.5">{p.label}</p>
-                      <p className="text-headline-md font-bold" style={{ color: t.fg }}>{p.value}</p>
-                    </div>
-                  ))}
+                <div className="relative bg-white/10 rounded-xl px-4 py-6 text-center backdrop-blur min-w-0">
+                  <p className="text-display-lg font-bold leading-none tabular-nums text-white">
+                    {montoLabel}
+                  </p>
+                  {cotizando && (
+                    <p className="text-[10px] text-white/70 mt-2 flex items-center justify-center gap-1">
+                      <Icon name="progress_activity" className="animate-spin text-[14px]" />
+                      Cotizando…
+                    </p>
+                  )}
+                  {!cotizando && cotError && (
+                    <p className="text-[10px] text-red-300 mt-2">
+                      {cot.error || 'No se pudo cotizar este plan'}
+                    </p>
+                  )}
+                  {!cotizando && !cot && (
+                    <p className="text-[10px] text-white/60 mt-2">
+                      Selecciona el plan para cotizar
+                    </p>
+                  )}
                 </div>
 
-                <div className="bg-white/60 rounded-xl p-4">
-                  <p className="text-label-md font-bold text-on-surface mb-3 uppercase tracking-wide text-[11px]">Coberturas incluidas</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {planSel.coberturas.map((c) => (
-                      <div key={c.nombre} className="flex items-center gap-2">
-                        <Icon name={c.incluida ? 'check_circle' : 'cancel'} className="text-[18px] shrink-0"
-                          style={{ color: c.incluida ? t.fg : '#9CA3AF' }} filled />
-                        <span className={clsx('text-body-md', c.incluida ? 'text-on-surface font-medium' : 'text-on-surface-variant line-through')}>
-                          {c.nombre}
-                        </span>
+                {(() => {
+                  const freqState = frecuenciasByPlan[planSel.id]
+                  const freqsList = (freqState?.list || []).filter((f) => isFrecuenciaAnual(f))
+                  const freqLoading = freqState?.status === 'loading'
+                  if (freqLoading) {
+                    return (
+                      <p className="relative text-[10px] text-white/70 flex items-center gap-1">
+                        <Icon name="progress_activity" className="animate-spin text-[14px]" />
+                        Cargando frecuencias…
+                      </p>
+                    )
+                  }
+                  if (freqState?.status === 'error') {
+                    return (
+                      <p className="relative text-[10px] text-red-300">
+                        {freqState.error || 'No se pudieron cargar las frecuencias'}
+                      </p>
+                    )
+                  }
+                  if (!freqsList.length) return null
+                  return (
+                    <div className="relative mt-auto pt-3 border-t border-white/20">
+                      <p className="text-sm font-bold uppercase tracking-wide text-white/70 mb-2">
+                        {freqsList.length > 1 ? 'Selecciona la' : '' } frecuencia de pago
+                      </p>
+                      <div
+                        className={clsx(
+                          'grid gap-2',
+                          freqsList.length === 1 && 'grid-cols-1',
+                          freqsList.length === 2 && 'grid-cols-2',
+                          freqsList.length === 3 && 'grid-cols-3',
+                          freqsList.length >= 4 && 'grid-cols-4',
+                        )}
+                      >
+                        {freqsList.map((f) => {
+                          const sel = frecuenciaSel === f.cvalor
+                          return (
+                            <button
+                              key={f.cvalor}
+                              type="button"
+                              onClick={() => setFrecuenciaSel(f.cvalor)}
+                              className={clsx(
+                                'rounded-lg px-2 py-2.5 border-2 transition-all text-[11px] sm:text-[12px] font-semibold text-center min-h-[44px]',
+                                sel
+                                  ? 'border-secondary bg-secondary text-white shadow-sm'
+                                  : 'border-white/20 bg-white/10 text-white/80 hover:bg-white/15 hover:border-white/35',
+                              )}
+                            >
+                              {f.xdescripcion}
+                            </button>
+                          )
+                        })}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </div>
+                  )
+                })()}
               </div>
             )
           })()}
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => onContratar ? onContratar(planSel) : navigate('/emision')}
-              className="btn-accent flex-1 py-3 text-body-lg"
-            >
-              <Icon name="payments" className="text-[22px]" filled />
-              Contratar {planSel.nombre} — Proceder al pago
-            </button>
-            <button onClick={() => navigate('/inspecciones')} className="btn-soft flex-1 sm:flex-none">
-              <Icon name="list" /> Ver Inspecciones
-            </button>
-          </div>
         </div>
-      ) : (
+      ) : !elegible ? (
         <div className="card p-5 sm:p-6 flex flex-col items-center text-center gap-4 border-2 border-error/30">
           <div className="w-20 h-20 rounded-full bg-error-container flex items-center justify-center">
             <Icon name="gpp_bad" className="text-[40px] text-error" filled />
@@ -312,7 +759,7 @@ export default function ResultadoPlan({ resultado, inspectionNumber, navigate, p
             </button>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
@@ -320,10 +767,10 @@ export default function ResultadoPlan({ resultado, inspectionNumber, navigate, p
 function PiezaStat({ label, value, tone, icon }) {
   const s = PLAN_TONES[tone] ?? PLAN_TONES.neutral
   return (
-    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: s.bg }}>
-      <Icon name={icon} className="text-[22px] sm:text-[26px] mb-1" style={{ color: s.fg }} filled />
-      <p className="text-headline-md sm:text-display-sm font-bold" style={{ color: s.fg }}>{value}</p>
-      <p className="text-[10px] sm:text-caption font-semibold" style={{ color: s.fg }}>{label}</p>
+    <div className="rounded-lg px-1.5 py-1.5 text-center min-w-0" style={{ backgroundColor: s.bg }}>
+      <Icon name={icon} className="text-[14px] mb-0.5" style={{ color: s.fg }} filled />
+      <p className="text-label-md font-bold leading-none tabular-nums" style={{ color: s.fg }}>{value}</p>
+      <p className="text-[9px] font-semibold leading-tight mt-0.5 truncate" style={{ color: s.fg }}>{label}</p>
     </div>
   )
 }

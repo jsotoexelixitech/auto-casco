@@ -5,7 +5,6 @@ import StatusChip from '../components/ui/StatusChip'
 import Icon from '../components/ui/Icon'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
-import { downloadPdf } from '../utils/downloadPdf'
 
 const COVERAGE_ICONS = {
   'Responsabilidad Civil': 'gavel',
@@ -47,32 +46,17 @@ export default function PolicyDetailPage() {
   const vehicle = getVehicle(policy.vehicleId)
   const policyInspections = inspections.filter((i) => i.vehicleId === policy.vehicleId)
   const diasPct = Math.min(100, ((policy.diasRestantes ?? 0) / (policy.diasContratados || 1)) * 100)
+  const pdfUrl = policy.urlpoliza || policy.urlPoliza || policy.emission?.urlpoliza || null
 
   const handleDownload = () => {
-    const lines = [
-      `Numero de poliza: ${policy.numero}`,
-      `Estado: ${policy.estado}`,
-      `Plan: ${policy.plan}  -  Modalidad: ${policy.modalidad}`,
-      `Vigencia: ${policy.vigenciaDesde}  ->  ${policy.vigenciaHasta}`,
-      `Dias: ${policy.diasRestantes} restantes / ${policy.diasContratados} contratados`,
-      '',
-      'Vehiculo asegurado',
-      `${vehicle?.marca} ${vehicle?.modelo} ${vehicle?.anio} (${vehicle?.color})`,
-      `Placa: ${vehicle?.placa}`,
-      `Serial / VIN: ${vehicle?.serial}`,
-      '',
-      'Coberturas incluidas:',
-      ...policy.coberturas.map(
-        (c) => `   - ${c.nombre}  /  Limite ${typeof c.limite === 'number' ? '$' + c.limite.toLocaleString() : c.limite}`,
-      ),
-      '',
-      `Prima total: $${policy.prima.toLocaleString()}`,
-      `Saldo disponible: $${policy.saldo.toFixed(2)}`,
-      '',
-      'La Mundial de Seguros - 52 anos contigo',
-    ]
-    downloadPdf({ title: `Poliza ${policy.numero}`, lines, filename: `${policy.numero}.pdf` })
-    toast.success('Póliza descargada en PDF', { title: '¡Listo!' })
+    if (!pdfUrl) {
+      toast.warning('Esta póliza aún no tiene PDF disponible desde la emisión.', {
+        title: 'Sin PDF',
+        duration: 4500,
+      })
+      return
+    }
+    window.open(pdfUrl, '_blank', 'noopener,noreferrer')
   }
 
   const handleShare = async () => {
@@ -106,10 +90,21 @@ export default function PolicyDetailPage() {
             <button onClick={handleShare} className="btn-icon" aria-label="Compartir">
               <Icon name="share" />
             </button>
-            <button onClick={handleDownload} className="btn-ghost hidden sm:inline-flex">
+            <button
+              onClick={handleDownload}
+              className="btn-ghost hidden sm:inline-flex"
+              disabled={!pdfUrl}
+              title={pdfUrl ? 'Abrir PDF de la póliza' : 'PDF no disponible'}
+            >
               <Icon name="picture_as_pdf" /> Descargar
             </button>
-            <button onClick={handleDownload} className="btn-icon sm:hidden" aria-label="Descargar">
+            <button
+              onClick={handleDownload}
+              className="btn-icon sm:hidden"
+              aria-label="Descargar"
+              disabled={!pdfUrl}
+              title={pdfUrl ? 'Abrir PDF de la póliza' : 'PDF no disponible'}
+            >
               <Icon name="picture_as_pdf" />
             </button>
           </>

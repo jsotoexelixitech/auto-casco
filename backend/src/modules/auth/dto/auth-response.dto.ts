@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UserPublicDto {
-  @ApiProperty() id!: string;
+  @ApiProperty({ example: 1, description: 'ID correlativo (autoincrement)' })
+  id!: number;
   @ApiProperty() email!: string;
   @ApiProperty() name!: string;
   @ApiProperty({ enum: ['admin', 'perito', 'asegurado', 'intermediario'] })

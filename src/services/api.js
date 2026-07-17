@@ -78,12 +78,19 @@ async function request(method, path, body) {
   const json = await res.json().catch(() => ({}))
 
   if (!res.ok) {
-    // 401 = token inválido o vencido → limpiar para no seguir enviando requests con él
+    // 401 = token inválido o vencido — limpiar token pero el backend sigue disponible
     if (res.status === 401) {
       clearToken()
-      backendAvailable = false   // cortar los requests siguientes en esta sesión
     }
-    const msg = json?.message ?? json?.error ?? `HTTP ${res.status}`
+    const errBody = json?.error
+    const details = typeof errBody === 'object' ? errBody?.details : null
+    const detailMsg = Array.isArray(details) ? details.join('. ') : null
+    const msg =
+      detailMsg ||
+      (typeof errBody === 'object' && errBody?.message) ||
+      json?.message ||
+      (typeof json?.error === 'string' ? json.error : null) ||
+      `HTTP ${res.status}`
     throw new ApiError(res.status, Array.isArray(msg) ? msg.join('. ') : msg)
   }
 
@@ -139,8 +146,9 @@ export const vehicles = {
 /* Inspections */
 export const inspections = {
   list: () => get('/inspections'),
-  get: (id) => get(`/inspections/${id}`),
+  get: (id) => get(`/inspections/${encodeURIComponent(id)}`),
   create: (data) => post('/inspections', data),
+  update: (id, data) => patch(`/inspections/${encodeURIComponent(id)}`, data),
 }
 
 /* Siniestros */
@@ -158,11 +166,40 @@ export const payments = {
   addMethod: (data) => post('/payments/methods', data),
   removeMethod: (id) => del(`/payments/methods/${id}`),
   setPrimary: (id) => patch(`/payments/methods/${id}/primary`),
+  /** Crea SSO Nexus Pagos → { redirect_url, idOperacion } */
+  createCheckoutSso: (data) => post('/payments/checkout/sso', data),
+  getCheckoutStatus: (idOperacion) => get(`/payments/checkout/${encodeURIComponent(idOperacion)}`),
+  /** Simula notify de Pagos (solo pruebas). */
+  simulateCheckoutNotify: (idOperacion, extra = {}) =>
+    post('/payments/checkout/notify', {
+      status: 'ok',
+      paymentVerified: true,
+      idOperacion,
+      code: 'ACCP',
+      message: 'Pago verificado',
+      payment: {
+        method: 'mobile',
+        reference: `${Date.now().toString().slice(-12).padStart(12, '0')}`,
+        amount: extra.amount ?? 0,
+        paidOn: new Date().toISOString().slice(0, 10),
+        verifiedOn: new Date().toISOString().slice(0, 10),
+        code: 'ACCP',
+        message: 'Pago verificado',
+      },
+      payload: { idOperacion, simulated: true },
+    }),
 }
 
 /* Plans */
 export const plans = {
   list: () => get('/plans'),
+}
+
+/* AI — análisis vehicular y OCR (backend + Gemini) */
+export const ai = {
+  analyzePhoto: (data) => post('/ai/analyze-photo', data),
+  extractDocument: (data) => post('/ai/extract-document', data),
+  identifySequence: (data) => post('/ai/identify-sequence', data),
 }
 
 /* ── Connectivity check (legacy alias) ─────────────────────────────────── */

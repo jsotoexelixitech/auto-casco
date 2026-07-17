@@ -2,6 +2,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, Logger, ClassSerializerInterceptor } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -10,9 +11,14 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+    bodyParser: false,
   });
   const logger = new Logger('Bootstrap');
   const config = app.get(ConfigService);
+
+  // Fotos en base64 pueden superar el límite por defecto (~100kb)
+  app.use(json({ limit: '15mb' }));
+  app.use(urlencoded({ extended: true, limit: '15mb' }));
 
   // ─── Security ────────────────────────────────────────────────────────
   app.use(
@@ -76,6 +82,7 @@ async function bootstrap() {
     .addTag('Payments', 'Pagos y métodos de pago')
     .addTag('Siniestros', 'Siniestros / reclamos')
     .addTag('Plans', 'Planes de cobertura')
+    .addTag('AI', 'Análisis IA — fotos y OCR')
     .addTag('Health', 'Estado del servicio')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);

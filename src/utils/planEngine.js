@@ -26,7 +26,7 @@ export const PLANES = {
     prima: { mensual: 285, anual: 3060, diaria: 9.5 },
     coberturas: [
       { nombre: 'Daños propios (casco)', incluida: true },
-      { nombre: 'Responsabilidad Civil', incluida: true },
+      { nombre: 'Responsabilidad Civil (RCV)', incluida: true },
       { nombre: 'Robo Total', incluida: true },
       { nombre: 'Robo Parcial', incluida: true },
       { nombre: 'Gastos médicos ocupantes', incluida: true },
@@ -35,6 +35,8 @@ export const PLANES = {
     ],
     badge: 'Recomendado',
     badgeTone: 'success',
+    incluyeRcv: true,
+    coletilla: 'RCV',
   },
   COBERTURA_AMPLIA_CON_DEDUCIBLE: {
     id: 'cobertura_amplia_deducible',
@@ -48,7 +50,7 @@ export const PLANES = {
     prima: { mensual: 245, anual: 2640, diaria: 8.2 },
     coberturas: [
       { nombre: 'Daños propios (casco)', incluida: true },
-      { nombre: 'Responsabilidad Civil', incluida: true },
+      { nombre: 'Responsabilidad Civil (RCV)', incluida: true },
       { nombre: 'Robo Total', incluida: true },
       { nombre: 'Robo Parcial', incluida: true },
       { nombre: 'Gastos médicos ocupantes', incluida: true },
@@ -57,16 +59,18 @@ export const PLANES = {
     ],
     badge: 'Con deducible',
     badgeTone: 'warning',
+    incluyeRcv: true,
+    coletilla: 'RCV',
   },
   RCV: {
     id: 'rcv',
     nombre: 'RCV',
     subtitulo: 'Responsabilidad Civil Vehicular',
-    descripcion: 'El vehículo presenta daños moderados. Se ofrece cobertura de Responsabilidad Civil para proteger a terceros, con deducible aplicable por las condiciones del vehículo.',
+    descripcion: 'Opción individual de Responsabilidad Civil Vehicular para proteger a terceros, sin cobertura de daños propios del vehículo.',
     icono: 'gavel',
-    color: 'warning',
-    colorHex: '#D97706',
-    colorBg: '#FEF3C7',
+    color: 'info',
+    colorHex: '#1D4ED8',
+    colorBg: '#EFF6FF',
     prima: { mensual: 120, anual: 1320, diaria: 4.0 },
     coberturas: [
       { nombre: 'Responsabilidad Civil a terceros', incluida: true },
@@ -76,14 +80,16 @@ export const PLANES = {
       { nombre: 'Robo Total', incluida: false },
       { nombre: 'Vehículo de reemplazo', incluida: false },
     ],
-    badge: 'Con deducible',
-    badgeTone: 'warning',
+    badge: 'Opción individual',
+    badgeTone: 'info',
+    incluyeRcv: false,
+    coletilla: null,
   },
   PERDIDA_TOTAL: {
     id: 'perdida_total',
     nombre: 'Pérdida Total',
     subtitulo: 'Cobertura por Pérdida Total',
-    descripcion: 'El vehículo presenta daños significativos. Se puede ofrecer cobertura limitada únicamente para casos de Pérdida Total (siniestro catastrófico).',
+    descripcion: 'Cobertura limitada para casos de Pérdida Total (siniestro catastrófico), incluyendo Responsabilidad Civil Vehicular.',
     icono: 'car_crash',
     color: 'error',
     colorHex: '#DC2626',
@@ -92,13 +98,22 @@ export const PLANES = {
     coberturas: [
       { nombre: 'Pérdida Total por accidente', incluida: true },
       { nombre: 'Pérdida Total por robo', incluida: true },
-      { nombre: 'Responsabilidad Civil', incluida: false },
+      { nombre: 'Responsabilidad Civil (RCV)', incluida: true },
       { nombre: 'Daños parciales', incluida: false },
       { nombre: 'Asistencia vial', incluida: false },
     ],
     badge: 'Cobertura limitada',
     badgeTone: 'error',
+    incluyeRcv: true,
+    coletilla: 'RCV',
   },
+}
+
+/** Asegura que RCV figure como opción individual junto a los planes casco. */
+function conOpcionRcv(planes) {
+  if (!planes?.length) return planes
+  if (planes.some((p) => p.id === PLANES.RCV.id)) return planes
+  return [...planes, PLANES.RCV]
 }
 
 /**
@@ -109,9 +124,11 @@ export const PLANES = {
 export function calcularPiezas(photos) {
   let buenas = 0, regulares = 0, malas = 0, noExiste = 0
 
-  Object.values(photos).forEach((photo) => {
+  Object.entries(photos).forEach(([id, photo]) => {
     if (!photo.analyzed) return
-    Object.values(photo.piezas).forEach((pieza) => {
+    // El detalle solo valida; el estado canónico vive en la secuencia padre
+    if (id.startsWith('seq-detail-') || photo.isDynamicDetail) return
+    Object.values(photo.piezas || {}).forEach((pieza) => {
       if (pieza.estado === 'B') buenas++
       else if (pieza.estado === 'R') regulares++
       else if (pieza.estado === 'M') malas++
@@ -120,7 +137,9 @@ export function calcularPiezas(photos) {
   })
 
   const total = buenas + regulares + malas
-  const analizadas = Object.values(photos).filter((p) => p.analyzed).length
+  const analizadas = Object.entries(photos).filter(
+    ([id, p]) => p.analyzed && !id.startsWith('seq-detail-') && !p.isDynamicDetail,
+  ).length
 
   return { buenas, regulares, malas, noExiste, total, analizadas }
 }
@@ -200,11 +219,11 @@ export function determinarPlan(photos) {
   if (buenas < minBuenasConDeducible) {
     return {
       plan: PLANES.PERDIDA_TOTAL,
-      planesDisponibles: [PLANES.PERDIDA_TOTAL],
+      planesDisponibles: conOpcionRcv([PLANES.PERDIDA_TOTAL]),
       elegible: true,
       piezas,
       deducible: null,
-      motivo: `${buenas} piezas buenas (rango ${minBuenasPerdidaTotal}–${minBuenasConDeducible - 1}). El vehículo solo califica para cobertura de Pérdida Total.`,
+      motivo: `${buenas} piezas buenas (rango ${minBuenasPerdidaTotal}–${minBuenasConDeducible - 1}). El estado general del vehículo muestra limitaciones relevantes.`,
     }
   }
 
@@ -213,11 +232,14 @@ export function determinarPlan(photos) {
     const pctDano = calcularDeducible({ regulares, malas }, cfg)
     return {
       plan: PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE,
-      planesDisponibles: [PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE],
+      planesDisponibles: conOpcionRcv([
+        PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE,
+        PLANES.PERDIDA_TOTAL,
+      ]),
       elegible: true,
       piezas,
       deducible: pctDano,
-      motivo: `${buenas} piezas buenas (rango ${minBuenasConDeducible}–${minBuenasAmplia - 1}). Cobertura Amplia disponible con deducible del ${pctDano}%.`,
+      motivo: `${buenas} piezas buenas (rango ${minBuenasConDeducible}–${minBuenasAmplia - 1}). Se detectaron piezas con observaciones o daños.`,
     }
   }
 
@@ -228,20 +250,62 @@ export function determinarPlan(photos) {
     const pctDano = calcularDeducible({ regulares, malas }, cfg)
     return {
       plan: PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE,
-      planesDisponibles: [PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE, PLANES.PERDIDA_TOTAL],
+      planesDisponibles: conOpcionRcv([
+        PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE,
+        PLANES.PERDIDA_TOTAL,
+      ]),
       elegible: true,
       piezas,
       deducible: pctDano,
-      motivo: `El vehículo tiene suficientes piezas buenas (${buenas}), pero presenta observancias menores. Cobertura Amplia disponible con deducible del ${pctDano}%.`,
+      motivo: `El vehículo tiene suficientes piezas buenas (${buenas}), pero presenta observancias menores.`,
     }
   }
 
   return {
     plan: PLANES.COBERTURA_AMPLIA,
-    planesDisponibles: [PLANES.COBERTURA_AMPLIA, PLANES.PERDIDA_TOTAL],
+    planesDisponibles: conOpcionRcv([PLANES.COBERTURA_AMPLIA, PLANES.PERDIDA_TOTAL]),
     elegible: true,
     piezas,
     deducible: null,
-    motivo: `Excelente estado: ${buenas} piezas buenas, sin ninguna observancia. Puede optar a Cobertura Amplia sin deducible o Pérdida Total.`,
+    motivo: `Excelente estado: ${buenas} piezas buenas, sin ninguna observancia.`,
   }
+}
+
+/**
+ * Catálogo fijo de planes para UI: siempre muestra Cobertura Amplia, Pérdida Total y RCV.
+ * Los no aplicables vienen con disponible: false (estilo deshabilitado).
+ * @param {{ plan: Object|null, planesDisponibles?: Object[], elegible?: boolean, piezas?: Object }} resultado
+ */
+export function getPlanesCatalogoVista(resultado = {}) {
+  const disponibles = resultado.planesDisponibles ?? []
+  const ids = new Set(disponibles.map((p) => p.id))
+  const sugeridoId = resultado.plan?.id ?? null
+
+  const ampliaDisponible =
+    ids.has(PLANES.COBERTURA_AMPLIA.id) || ids.has(PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE.id)
+
+  const ampliaPlan =
+    disponibles.find((p) => p.id === PLANES.COBERTURA_AMPLIA.id)
+    || disponibles.find((p) => p.id === PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE.id)
+    || (resultado.piezas && (resultado.piezas.regulares > 0 || resultado.piezas.malas > 0)
+      ? PLANES.COBERTURA_AMPLIA_CON_DEDUCIBLE
+      : PLANES.COBERTURA_AMPLIA)
+
+  return [
+    {
+      plan: ampliaPlan,
+      disponible: ampliaDisponible,
+      sugerido: sugeridoId === ampliaPlan.id,
+    },
+    {
+      plan: PLANES.PERDIDA_TOTAL,
+      disponible: ids.has(PLANES.PERDIDA_TOTAL.id),
+      sugerido: sugeridoId === PLANES.PERDIDA_TOTAL.id,
+    },
+    {
+      plan: PLANES.RCV,
+      disponible: ids.has(PLANES.RCV.id),
+      sugerido: sugeridoId === PLANES.RCV.id,
+    },
+  ]
 }

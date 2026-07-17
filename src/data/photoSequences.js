@@ -92,6 +92,14 @@ export const PHOTO_SEQUENCES = [
     ],
   },
   {
+    id: 'seq-techo',
+    nombre: 'Techo del Vehículo',
+    descripcion: 'Vista superior del techo, preferiblemente desde un ángulo elevado.',
+    icon: 'roofing',
+    diagramZone: 'roof',
+    piezas: ['Techo', 'Quema Coco'],
+  },
+  {
     id: 'seq-serial',
     nombre: 'Impronta / Serial',
     descripcion: 'Foto de la impronta (serial de carrocería) y serial troquelado.',
@@ -129,6 +137,7 @@ export const PHOTO_SEQUENCES = [
     descripcion: 'Caucho y rin de repuesto, gato, llave de gato y triángulo.',
     icon: 'build_circle',
     diagramZone: 'trunk',
+    opcional: true,
     piezas: ['Caucho Repuesto', 'Gato', 'Llave de Gato', 'Triángulo'],
   },
   {
@@ -137,14 +146,7 @@ export const PHOTO_SEQUENCES = [
     descripcion: 'Señalamiento de daños visibles al momento de la inspección.',
     icon: 'report',
     diagramZone: 'damages',
+    opcional: true,
     piezas: ['Daños identificados'],
-  },
-  {
-    id: 'seq-techo',
-    nombre: 'Techo del Vehículo',
-    descripcion: 'Vista superior del techo, preferiblemente desde un ángulo elevado.',
-    icon: 'roofing',
-    diagramZone: 'roof',
-    piezas: ['Techo', 'Quema Coco'],
   },
 ]

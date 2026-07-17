@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { requireCorrelativeId, toCorrelativeId } from '../../common/utils/ids';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateSiniestroDto } from './dto/siniestro.dto';
 
@@ -10,7 +11,7 @@ import { CreateSiniestroDto } from './dto/siniestro.dto';
 export class SiniestrosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(userId: string, role: string) {
+  async findAll(userId: number, role: string) {
     const where =
       role === 'admin' || role === 'perito'
         ? {}
@@ -28,10 +29,16 @@ export class SiniestrosService {
     return list.map((s) => this.mapToFrontend(s));
   }
 
-  async findOne(id: string, userId: string, role: string) {
-    // Support lookup by database id OR by numero (e.g. "SIN-2026-001")
+  async findOne(id: string, userId: number, role: string) {
+    const correlative = toCorrelativeId(id);
     const s = await this.prisma.siniestro.findFirst({
-      where: { OR: [{ id }, { numero: id }] },
+      where: {
+        OR: [
+          ...(correlative != null ? [{ id: correlative }] : []),
+          { numero: id },
+          { legacyId: id },
+        ],
+      },
       include: {
         vehicle: true,
         policy: { select: { numero: true, holderId: true } },
@@ -48,33 +55,32 @@ export class SiniestrosService {
     return this.mapToFrontend(s);
   }
 
-  async create(dto: CreateSiniestroDto, userId: string) {
-    // Find an active policy for this vehicle and user
+  async create(dto: CreateSiniestroDto, userId: number) {
+    const vehicleId = requireCorrelativeId(dto.vehicleId, 'Vehículo');
     const policy = await this.prisma.policy.findFirst({
       where: {
-        vehicleId: dto.vehicleId,
+        vehicleId,
         holderId: userId,
         estado: 'Activa',
       },
     });
 
     if (!policy) {
-      // Create a generic link to any policy of the user if no active one
       const anyPolicy = await this.prisma.policy.findFirst({
         where: { holderId: userId },
       });
       if (!anyPolicy) throw new NotFoundException('No tienes pólizas activas');
 
-      return this.createRecord(dto, anyPolicy.id, userId);
+      return this.createRecord(dto, anyPolicy.id, vehicleId);
     }
 
-    return this.createRecord(dto, policy.id, userId);
+    return this.createRecord(dto, policy.id, vehicleId);
   }
 
   private async createRecord(
     dto: CreateSiniestroDto,
-    policyId: string,
-    _userId: string,
+    policyId: number,
+    vehicleId: number,
   ) {
     const count = await this.prisma.siniestro.count();
     const numero = `SIN-${new Date().getFullYear()}-${String(count + 1).padStart(3, '0')}`;
@@ -87,7 +93,7 @@ export class SiniestrosService {
       data: {
         numero,
         policyId,
-        vehicleId: dto.vehicleId,
+        vehicleId,
         tipo: dto.tipo,
         severidad: dto.severidad,
         lugar: dto.lugar,

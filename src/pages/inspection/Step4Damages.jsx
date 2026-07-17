@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Icon from '../../components/ui/Icon'
 import { useToast } from '../../context/ToastContext'
+import { formatDamageText } from '../../utils/fieldValidators'
+import { validateDamageDraft, validateStep4Fields } from './step4Validation'
 
 const DAMAGE_TYPES = [
   { id: 'rayón', label: 'Rayón' },
@@ -9,7 +11,21 @@ const DAMAGE_TYPES = [
   { id: 'rotura', label: 'Rotura' },
   { id: 'pintura', label: 'Pérdida de pintura' },
   { id: 'cristal', label: 'Cristal dañado' },
+  { id: 'otro', label: 'Otro' },
 ]
+
+const EMPTY_DRAFT = {
+  tipo: 'rayón',
+  tipoOtro: '',
+  severidad: 'leve',
+  ubicacion: '',
+  descripcion: '',
+}
+
+function getTipoLabel(damage) {
+  if (damage.tipo === 'otro') return damage.tipoOtro?.trim() || 'Otro'
+  return DAMAGE_TYPES.find((t) => t.id === damage.tipo)?.label || damage.tipo
+}
 
 const SEVERITY = [
   { id: 'leve', label: 'Leve', tone: 'success' },
@@ -17,288 +33,335 @@ const SEVERITY = [
   { id: 'grave', label: 'Grave', tone: 'error' },
 ]
 
-export default function Step4Damages({ state }) {
+export default function Step4Damages({ state, validateTrigger = 0 }) {
   const {
     danios, setDanios,
-    video360, setVideo360,
     descripcionDanios, setDescripcionDanios,
     observacionesRiesgo, setObservacionesRiesgo,
-    iaDiagnostico, setIaDiagnostico,
   } = state
   const toast = useToast()
   const [showAdd, setShowAdd] = useState(false)
-  const [generatingIA, setGeneratingIA] = useState(false)
-  const [draft, setDraft] = useState({
-    tipo: 'rayón',
-    severidad: 'leve',
-    ubicacion: '',
-    descripcion: '',
-  })
+  const [editingId, setEditingId] = useState(null)
+  const [descripcionError, setDescripcionError] = useState('')
+  const [observacionesError, setObservacionesError] = useState('')
+  const [draftErrors, setDraftErrors] = useState({})
+  const [draft, setDraft] = useState({ ...EMPTY_DRAFT })
 
-  const addDamage = () => {
-    if (!draft.ubicacion) {
-      toast.error('Indica la ubicación del daño en el vehículo.')
+  const validateDraft = () => validateDamageDraft(draft)
+
+  const cancelAddDamage = () => {
+    setDraft({ ...EMPTY_DRAFT })
+    setDraftErrors({})
+    setEditingId(null)
+    setShowAdd(false)
+  }
+
+  const startAddDamage = () => {
+    setDraft({ ...EMPTY_DRAFT })
+    setDraftErrors({})
+    setEditingId(null)
+    setShowAdd(true)
+  }
+
+  const startEditDamage = (damage) => {
+    setEditingId(damage.id)
+    setDraft({
+      tipo: damage.tipo === 'otro' ? 'otro' : damage.tipo,
+      tipoOtro: damage.tipo === 'otro' ? (damage.tipoOtro || '') : '',
+      severidad: damage.severidad,
+      ubicacion: damage.ubicacion || '',
+      descripcion: damage.descripcion || '',
+    })
+    setDraftErrors({})
+    setShowAdd(true)
+  }
+
+  const clearDraftError = (field) => {
+    setDraftErrors((prev) => {
+      if (!prev[field]) return prev
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+  }
+
+  useEffect(() => {
+    if (!validateTrigger) return
+    const { errors } = validateStep4Fields({ descripcionDanios, observacionesRiesgo })
+    setDescripcionError(errors.descripcionDanios || '')
+    setObservacionesError(errors.observacionesRiesgo || '')
+  }, [validateTrigger, descripcionDanios, observacionesRiesgo])
+
+  const saveDamage = () => {
+    const errors = validateDraft()
+    if (Object.keys(errors).length > 0) {
+      setDraftErrors(errors)
+      toast.error('Debes completar todos los campos requeridos antes de registrar el daño.', {
+        title: 'Formulario incompleto',
+      })
       return
     }
-    setDanios([
-      ...danios,
-      { ...draft, id: `dam-${Date.now()}`, fecha: new Date().toISOString() },
-    ])
-    setShowAdd(false)
-    setDraft({ tipo: 'rayón', severidad: 'leve', ubicacion: '', descripcion: '' })
-    toast.success('Daño registrado')
+
+    if (editingId) {
+      setDanios(
+        danios.map((d) =>
+          d.id === editingId
+            ? { ...d, ...draft, id: d.id, fecha: d.fecha }
+            : d,
+        ),
+      )
+      toast.success('Daño actualizado')
+    } else {
+      setDanios([
+        ...danios,
+        { ...draft, id: `dam-${Date.now()}`, fecha: new Date().toISOString() },
+      ])
+      toast.success('Daño registrado')
+    }
+
+    cancelAddDamage()
   }
 
-  const removeDamage = (id) => setDanios(danios.filter((d) => d.id !== id))
-
-  const generateIaDiagnostico = () => {
-    setGeneratingIA(true)
-    toast.info('Generando diagnóstico con IA…', { title: 'IA · Diagnóstico' })
-    setTimeout(() => {
-      const samples = [
-        `El vehículo presenta ${danios.length} daño(s) registrado(s). ${danios.filter((d) => d.severidad === 'grave').length} de gravedad severa. Se recomienda evaluación técnica antes de la emisión de póliza.`,
-        `Inspección completada. Se detectaron daños en: ${danios.map((d) => d.ubicacion).join(', ') || 'ninguna ubicación registrada'}. El vehículo requiere revisión de los componentes afectados.`,
-        `Estado general del vehículo: ${danios.length === 0 ? 'Óptimo, sin daños aparentes.' : `Daños presentes (${danios.length}). Riesgo ${danios.some((d) => d.severidad === 'grave') ? 'elevado' : 'moderado'} según evaluación IA.`}`,
-      ]
-      const diag = samples[Math.floor(Math.random() * samples.length)]
-      setIaDiagnostico(diag)
-      setGeneratingIA(false)
-      toast.success('Diagnóstico generado', { title: 'IA completado' })
-    }, 2000)
+  const removeDamage = (id) => {
+    setDanios(danios.filter((d) => d.id !== id))
+    if (editingId === id) cancelAddDamage()
   }
 
-  const handleVideoUpload = () => {
-    setVideo360({ ...video360, processing: true })
-    toast.info('Subiendo video 360°…', { title: 'Procesamiento' })
-    setTimeout(() => {
-      setVideo360({
-        uploaded: true,
-        processing: false,
-        url: 'https://video.local/demo.mp4',
-        duration: '00:42',
-      })
-      toast.success('Video 360° procesado correctamente')
-    }, 2000)
+  const handleDescripcionChange = (value) => {
+    const formatted = formatDamageText(value)
+    setDescripcionDanios(formatted)
+    if (formatted.trim()) setDescripcionError('')
+  }
+
+  const handleObservacionesChange = (value) => {
+    const formatted = formatDamageText(value)
+    setObservacionesRiesgo(formatted)
+    if (formatted.trim() || !observacionesError) return
+    setObservacionesError('')
+  }
+
+  const updateDraftField = (field, value) => {
+    const formatted = formatDamageText(value)
+    setDraft({ ...draft, [field]: formatted })
+    if (formatted.trim()) clearDraftError(field)
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-2 flex flex-col gap-4">
+    <div className="w-full max-w-7xl mx-auto flex flex-col gap-4 lg:gap-6">
+      <div className="flex items-start gap-3 p-3 sm:p-4 rounded-xl border"
+        style={{ backgroundColor: '#EEF0FA', borderColor: 'rgba(15,26,90,0.15)' }}>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: '#D8DCF2', color: '#0F1A5A' }}>
+          <Icon name="info" className="text-[22px]" filled />
+        </div>
+        <div>
+          <p className="font-bold text-sm" style={{ color: '#0F1A5A' }}>Reporta daños visibles en tu vehículo</p>
+          <p className="text-caption text-on-surface-variant mt-0.5 leading-snug">
+            Agrega los daños que observes. La IA los complementará con el análisis de las fotos para generar el informe final.
+          </p>
+        </div>
+      </div>
 
-        <div className="flex items-start gap-3 p-3 sm:p-4 rounded-xl border"
-          style={{ backgroundColor: '#EEF0FA', borderColor: 'rgba(15,26,90,0.15)' }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: '#D8DCF2', color: '#0F1A5A' }}>
-            <Icon name="info" className="text-[22px]" filled />
+      <div className="card p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-3 pb-3 border-b border-outline-variant/50 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon name="report" className="text-error text-[24px]" filled />
+            <h3 className="text-headline-md text-on-surface truncate">Daños identificados</h3>
           </div>
-          <div>
-            <p className="font-bold text-sm" style={{ color: '#0F1A5A' }}>Reporta daños visibles en tu vehículo</p>
-            <p className="text-caption text-on-surface-variant mt-0.5 leading-snug">
-              Agrega los daños que observes. La IA los complementará con el análisis de las fotos para generar el informe final.
-            </p>
-          </div>
+          <button onClick={startAddDamage} className="btn-accent shrink-0">
+            <Icon name="add" /> <span className="hidden sm:inline">Agregar</span>
+          </button>
         </div>
 
-        <div className="card p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-3 pb-3 border-b border-outline-variant/50 gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <Icon name="report" className="text-error text-[24px]" filled />
-              <h3 className="text-headline-md text-on-surface truncate">Daños identificados</h3>
+        {danios.length === 0 && !showAdd && (
+          <div className="text-center py-6">
+            <div className="w-14 h-14 rounded-full bg-success-container text-on-success-container flex items-center justify-center mx-auto mb-2">
+              <Icon name="task_alt" className="text-[28px]" filled />
             </div>
-            <button onClick={() => setShowAdd(true)} className="btn-accent shrink-0">
-              <Icon name="add" /> <span className="hidden sm:inline">Agregar</span>
-            </button>
+            <p className="font-bold text-on-surface">Sin daños registrados</p>
+            <p className="text-caption text-on-surface-variant">
+              Agrega un daño si fue detectado durante la inspección.
+            </p>
           </div>
+        )}
 
-          {danios.length === 0 && !showAdd && (
-            <div className="text-center py-6">
-              <div className="w-14 h-14 rounded-full bg-success-container text-on-success-container flex items-center justify-center mx-auto mb-2">
-                <Icon name="task_alt" className="text-[28px]" filled />
-              </div>
-              <p className="font-bold text-on-surface">Sin daños registrados</p>
-              <p className="text-caption text-on-surface-variant">
-                Agrega un daño si fue detectado durante la inspección.
-              </p>
-            </div>
-          )}
-
-          {danios.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {danios.map((d) => (
-                <div
-                  key={d.id}
-                  className="border border-outline-variant/50 rounded-xl p-3 bg-surface-container-low/40"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div
-                        className={clsx(
-                          'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
-                          d.severidad === 'leve' &&
-                            'bg-success-container text-on-success-container',
-                          d.severidad === 'moderado' &&
-                            'bg-warning-container text-on-warning-container',
-                          d.severidad === 'grave' &&
-                            'bg-error-container text-on-error-container',
-                        )}
-                      >
-                        <Icon name="report" filled />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-on-surface capitalize truncate">{d.tipo}</p>
-                        <p className="text-caption text-on-surface-variant capitalize truncate">
-                          {d.severidad} · {d.ubicacion}
-                        </p>
-                      </div>
+        {danios.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {danios.map((d) => (
+              <div
+                key={d.id}
+                className={clsx(
+                  'border rounded-xl p-3 bg-surface-container-low/40',
+                  editingId === d.id
+                    ? 'border-primary/50 ring-1 ring-primary/20'
+                    : 'border-outline-variant/50',
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className={clsx(
+                        'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
+                        d.severidad === 'leve' &&
+                          'bg-success-container text-on-success-container',
+                        d.severidad === 'moderado' &&
+                          'bg-warning-container text-on-warning-container',
+                        d.severidad === 'grave' &&
+                          'bg-error-container text-on-error-container',
+                      )}
+                    >
+                      <Icon name="report" filled />
                     </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-on-surface capitalize truncate">{getTipoLabel(d)}</p>
+                      <p className="text-caption text-on-surface-variant capitalize truncate">
+                        {d.severidad} · {d.ubicacion}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center shrink-0">
                     <button
+                      type="button"
+                      onClick={() => startEditDamage(d)}
+                      aria-label="Actualizar daño"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition"
+                    >
+                      <Icon name="edit" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => removeDamage(d.id)}
                       aria-label="Eliminar daño"
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error-container/60 transition shrink-0"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error-container/60 transition"
                     >
                       <Icon name="delete" />
                     </button>
                   </div>
-                  {d.descripcion && (
-                    <p className="text-caption text-on-surface mt-2 line-clamp-2">
-                      {d.descripcion}
-                    </p>
-                  )}
                 </div>
-              ))}
-            </div>
-          )}
-
-          {showAdd && (
-            <div className="border-2 border-primary/30 bg-primary-fixed/20 rounded-xl p-3 sm:p-4 mt-3 animate-fade-in">
-              <h4 className="font-bold text-primary mb-2">Nuevo daño</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2">
-                  <label className="label">Tipo</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {DAMAGE_TYPES.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => setDraft({ ...draft, tipo: t.id })}
-                        className={clsx(
-                          'px-3 min-h-[40px] rounded-full text-label-md font-semibold border transition',
-                          draft.tipo === t.id
-                            ? 'bg-primary text-on-primary border-primary'
-                            : 'border-outline-variant text-on-surface-variant hover:border-primary',
-                        )}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="label">Severidad</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {SEVERITY.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => setDraft({ ...draft, severidad: s.id })}
-                        className={clsx(
-                          'min-h-[44px] rounded-lg text-label-md border transition font-semibold',
-                          draft.severidad === s.id && s.tone === 'success' &&
-                            'bg-success text-on-success border-success',
-                          draft.severidad === s.id && s.tone === 'warning' &&
-                            'bg-warning text-on-warning border-warning',
-                          draft.severidad === s.id && s.tone === 'error' &&
-                            'bg-error text-on-error border-error',
-                          draft.severidad !== s.id &&
-                            'bg-white border-outline-variant text-on-surface-variant',
-                        )}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="label">Ubicación en el vehículo</label>
-                  <input
-                    className="input"
-                    placeholder="Ej. Parachoques delantero izquierdo"
-                    value={draft.ubicacion}
-                    onChange={(e) => setDraft({ ...draft, ubicacion: e.target.value })}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="label">Descripción</label>
-                  <textarea
-                    className="input min-h-[72px] resize-none"
-                    placeholder="Describe el daño…"
-                    value={draft.descripcion}
-                    onChange={(e) => setDraft({ ...draft, descripcion: e.target.value })}
-                  />
-                </div>
+                {d.descripcion && (
+                  <p className="text-caption text-on-surface mt-2 line-clamp-2">
+                    {d.descripcion}
+                  </p>
+                )}
               </div>
-              <div className="flex gap-2 mt-3">
-                <button onClick={() => setShowAdd(false)} className="btn-soft flex-1">
-                  Cancelar
-                </button>
-                <button onClick={addDamage} className="btn-primary flex-1">
-                  <Icon name="check" /> Registrar
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Vehicle silhouette markers */}
-        <div className="card p-4 sm:p-5">
-          <h3 className="text-headline-md text-on-surface mb-3">
-            Mapa visual de daños
-          </h3>
-          <div className="relative aspect-[2/1] rounded-xl bg-primary-fixed/30 border border-outline-variant/50 overflow-hidden">
-            <svg viewBox="0 0 600 300" className="w-full h-full">
-              <g fill="#0F1A5A" opacity="0.18">
-                <rect x="120" y="60" width="360" height="180" rx="40" />
-                <rect x="180" y="40" width="240" height="60" rx="30" />
-                <rect x="180" y="200" width="240" height="60" rx="30" />
-              </g>
-              <g stroke="#0F1A5A" strokeWidth="1.5" fill="none" opacity="0.6">
-                <rect x="120" y="60" width="360" height="180" rx="40" />
-                <line x1="220" y1="60" x2="220" y2="240" strokeDasharray="4 4" />
-                <line x1="380" y1="60" x2="380" y2="240" strokeDasharray="4 4" />
-              </g>
-              {danios.map((d, i) => {
-                const positions = [
-                  { x: 150, y: 80 },
-                  { x: 450, y: 80 },
-                  { x: 450, y: 220 },
-                  { x: 150, y: 220 },
-                  { x: 300, y: 50 },
-                  { x: 300, y: 250 },
-                ]
-                const pos = positions[i % positions.length]
-                const color =
-                  d.severidad === 'leve'
-                    ? '#10B981'
-                    : d.severidad === 'moderado'
-                    ? '#F59E0B'
-                    : '#F43F5E'
-                return (
-                  <g key={d.id}>
-                    <circle cx={pos.x} cy={pos.y} r="14" fill={color} opacity="0.9" />
-                    <circle cx={pos.x} cy={pos.y} r="22" fill="none" stroke={color} strokeWidth="2" opacity="0.4">
-                      <animate attributeName="r" from="14" to="28" dur="1.5s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" from="0.6" to="0" dur="1.5s" repeatCount="indefinite" />
-                    </circle>
-                    <text x={pos.x} y={pos.y + 5} textAnchor="middle" fill="white" fontWeight="700" fontSize="13">
-                      {i + 1}
-                    </text>
-                  </g>
-                )
-              })}
-              <text x="300" y="160" textAnchor="middle" fill="#4a4f63" fontWeight="600" fontSize="14" opacity="0.6">
-                {danios.length === 0 ? 'Sin daños registrados' : `${danios.length} daño(s)`}
-              </text>
-            </svg>
+            ))}
           </div>
-        </div>
+        )}
+
+        {showAdd && (
+          <div className="border-2 border-primary/30 bg-primary-fixed/20 rounded-xl p-3 sm:p-4 mt-3 animate-fade-in">
+            <h4 className="font-bold text-primary mb-2">
+              {editingId ? 'Actualizar daño' : 'Nuevo daño'}
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="label">Tipo</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {DAMAGE_TYPES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        setDraft({
+                          ...draft,
+                          tipo: t.id,
+                          tipoOtro: t.id === 'otro' ? draft.tipoOtro : '',
+                        })
+                        if (t.id !== 'otro') clearDraftError('tipoOtro')
+                      }}
+                      className={clsx(
+                        'px-3 min-h-[40px] rounded-full text-label-md font-semibold border transition',
+                        draft.tipo === t.id
+                          ? 'bg-primary text-on-primary border-primary'
+                          : 'border-outline-variant text-on-surface-variant hover:border-primary',
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                {draft.tipo === 'otro' && (
+                  <>
+                    <input
+                      className={clsx(
+                        'input mt-2',
+                        draftErrors.tipoOtro && 'border-error ring-1 ring-error/30',
+                      )}
+                      placeholder="Describe el tipo de daño…"
+                      value={draft.tipoOtro}
+                      onChange={(e) => updateDraftField('tipoOtro', e.target.value)}
+                      aria-invalid={Boolean(draftErrors.tipoOtro)}
+                    />
+                    {draftErrors.tipoOtro && (
+                      <p className="text-caption text-error mt-1.5 font-medium">{draftErrors.tipoOtro}</p>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="sm:col-span-2">
+                <label className="label">Severidad</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {SEVERITY.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setDraft({ ...draft, severidad: s.id })}
+                      className={clsx(
+                        'min-h-[44px] rounded-lg text-label-md border transition font-semibold',
+                        draft.severidad === s.id && s.tone === 'success' &&
+                          'bg-success text-on-success border-success',
+                        draft.severidad === s.id && s.tone === 'warning' &&
+                          'bg-warning text-on-warning border-warning',
+                        draft.severidad === s.id && s.tone === 'error' &&
+                          'bg-error text-on-error border-error',
+                        draft.severidad !== s.id &&
+                          'bg-white border-outline-variant text-on-surface-variant',
+                      )}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="label">Ubicación en el vehículo</label>
+                <input
+                  className={clsx('input', draftErrors.ubicacion && 'border-error ring-1 ring-error/30')}
+                  placeholder="Ej. Parachoques delantero izquierdo"
+                  value={draft.ubicacion}
+                  onChange={(e) => updateDraftField('ubicacion', e.target.value)}
+                  aria-invalid={Boolean(draftErrors.ubicacion)}
+                />
+                {draftErrors.ubicacion && (
+                  <p className="text-caption text-error mt-1.5 font-medium">{draftErrors.ubicacion}</p>
+                )}
+              </div>
+              <div className="sm:col-span-2">
+                <label className="label">Descripción</label>
+                <textarea
+                  className={clsx(
+                    'input min-h-[72px] resize-none',
+                    draftErrors.descripcion && 'border-error ring-1 ring-error/30',
+                  )}
+                  placeholder="Describe el daño…"
+                  value={draft.descripcion}
+                  onChange={(e) => updateDraftField('descripcion', e.target.value)}
+                  aria-invalid={Boolean(draftErrors.descripcion)}
+                />
+                {draftErrors.descripcion && (
+                  <p className="text-caption text-error mt-1.5 font-medium">{draftErrors.descripcion}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button type="button" onClick={cancelAddDamage} className="btn-soft flex-1">
+                Cancelar
+              </button>
+              <button type="button" onClick={saveDamage} className="btn-primary flex-1">
+                <Icon name="check" /> {editingId ? 'Actualizar' : 'Registrar'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="card p-4 sm:p-5 flex flex-col gap-4">
@@ -311,13 +374,25 @@ export default function Step4Damages({ state }) {
           <label className="label flex items-center gap-1.5">
             <Icon name="edit_note" className="text-[18px] text-on-surface-variant" />
             Descripción de los Daños
+            <span className="text-error font-bold">*</span>
           </label>
           <textarea
-            className="input min-h-[88px] resize-none"
+            className={clsx(
+              'input min-h-[88px] resize-none',
+              descripcionError && 'border-error ring-1 ring-error/30',
+            )}
             placeholder="Describe detalladamente los daños observados en el vehículo…"
             value={descripcionDanios}
-            onChange={(e) => setDescripcionDanios(e.target.value)}
+            onChange={(e) => handleDescripcionChange(e.target.value)}
+            required
+            aria-invalid={Boolean(descripcionError)}
+            aria-describedby={descripcionError ? 'descripcion-danios-error' : undefined}
           />
+          {descripcionError && (
+            <p id="descripcion-danios-error" className="text-caption text-error mt-1.5 font-medium">
+              {descripcionError}
+            </p>
+          )}
         </div>
 
         <div>
@@ -326,98 +401,23 @@ export default function Step4Damages({ state }) {
             Observaciones adicionales
           </label>
           <textarea
-            className="input min-h-[88px] resize-none"
+            className={clsx(
+              'input min-h-[88px] resize-none',
+              observacionesError && 'border-error ring-1 ring-error/30',
+            )}
             placeholder="Observaciones adicionales sobre el estado del vehículo…"
             value={observacionesRiesgo}
-            onChange={(e) => setObservacionesRiesgo(e.target.value)}
+            onChange={(e) => handleObservacionesChange(e.target.value)}
+            aria-invalid={Boolean(observacionesError)}
+            aria-describedby={observacionesError ? 'observaciones-riesgo-error' : undefined}
           />
-        </div>
-
-        {/* Diagnóstico IA */}
-        <div className="border border-outline-variant/40 rounded-xl p-3 bg-surface-container-low/60">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2">
-              <Icon name="auto_awesome" className="text-primary text-[20px]" filled />
-              <span className="text-label-md font-semibold text-on-surface">Diagnóstico IA</span>
-            </div>
-            <button
-              onClick={generateIaDiagnostico}
-              disabled={generatingIA}
-              className="btn-soft text-caption py-1.5 px-3 min-h-[36px]"
-            >
-              {generatingIA ? (
-                <><Icon name="progress_activity" className="animate-spin text-[16px]" /> Generando…</>
-              ) : (
-                <><Icon name="auto_awesome" className="text-[16px]" /> Generar diagnóstico</>
-              )}
-            </button>
-          </div>
-          {iaDiagnostico ? (
-            <p className="text-body-md text-on-surface leading-relaxed">{iaDiagnostico}</p>
-          ) : (
-            <p className="text-caption text-on-surface-variant italic">
-              Haz clic en "Generar diagnóstico" para que la IA analice los daños registrados.
+          {observacionesError && (
+            <p id="observaciones-riesgo-error" className="text-caption text-error mt-1.5 font-medium">
+              {observacionesError}
             </p>
           )}
         </div>
       </div>
-
-      <aside className="card p-4 sm:p-5 flex flex-col">
-        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-outline-variant/50">
-          <Icon name="360" className="text-primary text-[24px]" filled />
-          <h3 className="text-headline-md text-on-surface">Video 360°</h3>
-        </div>
-        <p className="text-caption sm:text-body-md text-on-surface-variant mb-3">
-          Captura un video 360° del vehículo para complementar el reporte.
-        </p>
-
-        <div className="relative aspect-video rounded-xl overflow-hidden bg-tertiary flex items-center justify-center text-on-tertiary">
-          {video360.uploaded ? (
-            <>
-              <img
-                src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80"
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="relative z-10 flex flex-col items-center">
-                <button className="w-14 h-14 rounded-full bg-white/95 text-primary flex items-center justify-center shadow-elev-2 hover:scale-110 transition">
-                  <Icon name="play_arrow" className="text-[32px]" filled />
-                </button>
-                <span className="mt-2 text-caption font-bold bg-black/60 text-white px-2 py-0.5 rounded-full">
-                  {video360.duration}
-                </span>
-              </div>
-            </>
-          ) : video360.processing ? (
-            <div className="text-center">
-              <Icon name="progress_activity" className="text-[40px] animate-spin" />
-              <p className="font-bold mt-2">Procesando…</p>
-            </div>
-          ) : (
-            <div className="text-center">
-              <Icon name="videocam" className="text-[48px] opacity-50" />
-              <p className="text-caption opacity-80 mt-1">No se ha subido</p>
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={handleVideoUpload}
-          disabled={video360.processing}
-          className="btn-primary mt-3"
-        >
-          <Icon name={video360.uploaded ? 'refresh' : 'cloud_upload'} />
-          {video360.uploaded ? 'Reemplazar video' : 'Subir video 360°'}
-        </button>
-
-        <div className="mt-3 p-3 bg-warning-container/40 border border-warning/30 rounded-lg flex items-start gap-2">
-          <Icon name="info" className="text-warning text-[20px] mt-0.5 shrink-0" filled />
-          <p className="text-caption text-on-warning-container leading-snug">
-            El video 360° forma parte obligatoria del reporte y no se debe perder
-            durante el proceso.
-          </p>
-        </div>
-      </aside>
     </div>
   )
 }

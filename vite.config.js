@@ -96,9 +96,22 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    port: 5173,
+    port: 5175,
     strictPort: true,
     allowedHosts: true,
+    proxy: {
+      '/api/v1': {
+        // 127.0.0.1 evita ECONNREFUSED en Windows (localhost → ::1 IPv6)
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+      },
+      // Valrep (planes y otros endpoints futuros) — base: …/api/v1
+      '/valrep-api': {
+        target: 'http://192.168.8.120:3002',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/valrep-api/, '/api/v1'),
+      },
+    },
     watch: {
       ignored: [
         '**/node_modules/**',
