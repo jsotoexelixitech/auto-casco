@@ -21,6 +21,7 @@ import ResultadoPlan from '../components/inspection/ResultadoPlan'
 import PaymentStep from '../components/inspection/PaymentStep'
 import PaymentSuccess from '../components/inspection/PaymentSuccess'
 import { validateStep1 } from './inspection/step1Validation'
+import { shouldBypassLeaveGuard } from '../utils/navigationGuard'
 import { payments } from '../services/api'
 import {
   loadInspectionDraft,
@@ -333,11 +334,20 @@ export default function InspectionWizardPage() {
 
   // Confirmar al abandonar el flujo (sidebar, back, etc.).
   // No bloquear la transición natural al resultado de pago / emisión.
+  // Tampoco bloquear si el usuario ya confirmó cerrar sesión.
   const blocker = useBlocker(({ nextLocation }) => {
+    if (shouldBypassLeaveGuard()) return false
     if (isEditing || phase === 'success') return false
     if (String(nextLocation?.pathname || '').startsWith('/pago/')) return false
     return true
   })
+
+  // Si el logout activó el bypass con el blocker ya en "blocked", avanzar sin pedir confirmación de inspección.
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return
+    if (!shouldBypassLeaveGuard()) return
+    blocker.proceed?.()
+  }, [blocker])
 
   const shouldWarnUnload = !isEditing && phase !== 'success'
 

@@ -16,7 +16,7 @@ export default function AppLayout() {
   return (
     <div className="overflow-x-hidden" style={{ minHeight: '100dvh' }}>
       <SideNav open={open} onClose={() => setOpen(false)} />
-      <div className="md:ml-64 flex flex-col overflow-x-hidden" style={{ minHeight: '100dvh' }}>
+      <div className="md:ml-[4.5rem] flex flex-col overflow-x-hidden" style={{ minHeight: '100dvh' }}>
         <TopNav onMenuClick={() => setOpen((s) => !s)} />
         <main
           className="flex-1 container-pad py-3 sm:py-4 overflow-x-hidden"

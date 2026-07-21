@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { DEMO_USERS } from '../data/mockData'
 import * as api from '../services/api'
+import { allowUnsavedLeave } from '../utils/navigationGuard'
 
 const AuthContext = createContext(null)
 const STORAGE_KEY = 'lm_auto_casco_user'
@@ -74,6 +75,8 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
+    // Prioridad sobre guards de inspección / cambios sin guardar
+    allowUnsavedLeave()
     api.clearToken()
     setUser(null)
   }
